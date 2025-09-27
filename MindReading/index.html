@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>神奇读心术</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&display=swap');
+
+        .magic-text {
+            font-family: 'Ma Shan Zheng', cursive;
+        }
+
+        .number-display {
+            animation: pulse 1s infinite alternate;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            100% { transform: scale(1.05); }
+        }
+
+        .slide-in {
+            animation: slideIn 0.8s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
+        }
+
+        @keyframes slideIn {
+            0% { transform: translateY(30px); opacity: 0; }
+            100% { transform: translateY(0); opacity: 1; }
+        }
+
+        .result-reveal {
+            animation: reveal 1.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        }
+
+        @keyframes reveal {
+            0% { transform: scale(0.5); opacity: 0; }
+            70% { transform: scale(1.1); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        /* 紧凑型词汇网格 */
+        .compact-grid {
+            display: grid;
+            grid-template-columns: repeat(9, minmax(0, 1fr));
+            gap: 3px;
+        }
+
+        .compact-item {
+            display: flex;
+            align-items: center;
+            height: 32px;
+            padding: 0 6px;
+            background: linear-gradient(135deg, #f0f4ff, #edf2ff);
+            border-radius: 6px;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .compact-item:hover {
+            background: linear-gradient(135deg, #e0e7ff, #dbeafe);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(79, 70, 229, 0.1);
+        }
+
+        .number-badge {
+            min-width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #6366f1, #4f46e5);
+            color: white;
+            border-radius: 50%;
+            font-size: 12px;
+            font-weight: bold;
+            margin-right: 6px;
+        }
+
+        .word-label {
+            font-size: 12px;
+            font-weight: 500;
+            color: #1e293b;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            flex: 1;
+        }
+
+        @media (max-width: 1024px) {
+            .compact-grid {
+                grid-template-columns: repeat(9, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 768px) {
+            .compact-grid {
+                grid-template-columns: repeat(6, minmax(0, 1fr));
+                gap: 4px;
+            }
+
+            .compact-item {
+                height: 30px;
+                padding: 0 5px;
+            }
+
+            .number-badge {
+                min-width: 22px;
+                height: 20px;
+                font-size: 11px;
+                margin-right: 5px;
+            }
+
+            .word-label {
+                font-size: 11px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .compact-grid {
+                grid-template-columns: repeat(4, minmax(0, 1fr));
+                gap: 3px;
+            }
+
+            .compact-item {
+                height: 20px;
+            }
+        }
+
+        .countdown-bar {
+            height: 6px;
+            background: linear-gradient(90deg, rgba(79, 70, 229, 1) 0%, rgba(124, 58, 237, 1) 100%);
+            transition: width 0.5s linear;
+        }
+
+        .game-container {
+            max-height: 80vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .grid-container {
+            flex: 1;
+            min-height: 0;
+            overflow: hidden;
+            padding: 0 0px;
+        }
+
+        .selection-header {
+            padding: 6px 0 8px;
+            margin: 0;
+        }
+
+        .result-prompt {
+            font-size: 20px;
+            font-weight: bold;
+            color: #4f46e5;
+            margin: 20px 0;
+            animation: fadeIn 1s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .delayed-reveal {
+            opacity: 0;
+            animation: delayedReveal 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) 3.5s forwards;
+        }
+
+        @keyframes delayedReveal {
+            0% { transform: scale(0.5); opacity: 0; }
+            70% { transform: scale(1.1); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .result-container {
+            min-height: 180px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-purple-900 via-indigo-800 to-blue-900 min-h-screen flex items-center justify-center p-3 sm:p-4">
+    <div id="app" class="w-full max-w-6xl">
+        <!-- 游戏主容器 -->
+        <div class="game-container bg-white/90 backdrop-blur-lg rounded-2xl shadow-2xl overflow-hidden transition-all duration-500">
+            <!-- 标题区域 -->
+            <div class="bg-gradient-to-r from-purple-600 to-indigo-600 p-3 md:p-4 text-center">
+                <h1 class="text-xl sm:text-2xl font-bold text-white tracking-wide magic-text">
+                    神奇读心术
+                </h1>
+                <p class="mt-1 text-xs text-purple-200">我能读懂你内心的选择</p>
+            </div>
+
+            <!-- 游戏内容区域 -->
+            <div class="p-3 md:p-4 grid-container">
+                <!-- 初始界面 -->
+                <div v-if="gameState === 'start'" class="text-center py-6 slide-in">
+                    <div class="mb-4">
+                        <div class="w-16 h-16 sm:w-20 sm:h-20 mx-auto bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center shadow-lg animate-pulse">
+                            <i class="fas fa-brain text-white text-3xl sm:text-4xl"></i>
+                        </div>
+                    </div>
+                    <h2 class="text-lg sm:text-xl font-bold text-gray-800 mb-2">准备好测试你的心灵感应了吗？</h2>
+                    <p class="text-gray-600 max-w-md mx-auto mb-4 text-xs sm:text-sm">
+                        我将展示一组快速变化的数字，请你记住其中一个数字，然后请从词汇表中找出它对应的词汇。
+                        我将会分析你的脑电波，迅速找出你选择的词汇！
+                    </p>
+                    <button @click="startGame" class="px-5 py-2 sm:px-6 sm:py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-semibold rounded-full shadow-lg transition-all transform hover:scale-105 active:scale-95 text-xs sm:text-sm">
+                        开始挑战 <i class="ml-1 fas fa-hat-wizard"></i>
+                    </button>
+                </div>
+
+                <!-- 数字记忆界面 -->
+                <div v-if="gameState === 'numbers'" class="text-center py-4 slide-in">
+                    <h2 class="text-lg sm:text-xl font-bold text-gray-800 mb-2">记住其中一个数字！</h2>
+                    <p class="text-gray-600 mb-4 text-xs sm:text-sm">集中注意力，记住其中一个数字...</p>
+
+                    <div class="bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl p-1 inline-block shadow-lg mb-6">
+                        <div class="bg-white rounded-lg p-4 w-28 h-28 sm:w-32 sm:h-28 flex items-center justify-center mx-auto">
+                            <span class="text-5xl sm:text-6xl font-bold text-purple-800 number-display">
+                                {{ currentNumber }}
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="mt-3">
+                        <div class="h-2 bg-gray-200 rounded-full overflow-hidden max-w-md mx-auto">
+                            <div class="h-full bg-gradient-to-r from-purple-600 to-indigo-600 rounded-full transition-all duration-100" :style="{width: countdownPercent + '%'}"></div>
+                        </div>
+                        <p class="text-gray-600 mt-2 font-medium text-xs sm:text-sm">{{ countdown }}秒后进入下一步</p>
+                    </div>
+                </div>
+
+                <!-- 词汇选择界面 -->
+                <div v-if="gameState === 'selection'" class="flex flex-col h-full slide-in">
+                    <div class="selection-header">
+                        <h2 class="text-lg sm:text-xl font-bold text-center text-gray-800 mb-1">选择你记住的数字对应的词汇</h2>
+                        <p class="text-center text-gray-600 text-xs sm:text-sm">你有5秒钟时间找到并记住你的词汇</p>
+                    </div>
+
+                    <!-- 倒计时条 -->
+                    <div class="h-1.5 bg-gray-200 rounded-full mb-2">
+                        <div class="countdown-bar h-full rounded-full" :style="{ width: selectionCountdownPercent + '%' }"></div>
+                    </div>
+
+                    <!-- 紧凑型词汇网格 -->
+                    <div class="compact-grid flex-1 overflow-auto">
+                        <div v-for="(word, index) in words" :key="index"
+                             class="compact-item"
+                             @click="selectWord(index)">
+                            <div class="number-badge">{{ index + 1 }}</div>
+                            <div class="word-label">{{ word }}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 结果展示界面 -->
+                <div v-if="gameState === 'result'" class="text-center py-5 slide-in result-container">
+                    <div class="mb-4">
+                        <div class="w-16 h-16 sm:w-20 sm:h-20 mx-auto bg-gradient-to-r from-green-500 to-teal-500 rounded-full flex items-center justify-center shadow-lg animate-pulse">
+                            <i class="fas fa-magic text-white text-3xl"></i>
+                        </div>
+                    </div>
+
+                    <div class="result-prompt">
+                        正在分析脑电波，你选的词汇是...
+                    </div>
+
+                    <div class="delayed-reveal">
+                        <div class="bg-gradient-to-r from-green-500 to-teal-500 rounded-xl p-1 inline-block shadow-lg mb-4">
+                            <div class="bg-white rounded-lg p-4 w-48 sm:w-56 mx-auto">
+                                <span class="text-3xl sm:text-4xl font-bold text-green-700 magic-text">{{ targetWord }}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <p class="text-gray-600 max-w-md mx-auto mb-4 text-xs sm:text-sm">
+                        是不是很神奇？你的心灵和我的魔法产生了奇妙的共鸣！
+                    </p>
+
+                    <button @click="resetGame" class="px-5 py-2 sm:px-6 sm:py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-semibold rounded-full shadow-lg transition-all transform hover:scale-105 text-xs sm:text-sm">
+                        再玩一次
+                    </button>
+                </div>
+            </div>
+
+            <!-- 页脚 -->
+            <div class="bg-gray-100 p-2 text-center text-gray-600 text-xs border-t">
+                © 2025 中国超自然现象749号研究所. 版权所有
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, reactive, computed } = Vue;
+
+        createApp({
+            setup() {
+                // 游戏状态：start, numbers, selection, result
+                const gameState = ref('start');
+
+                // 词汇库（72个）
+                const vocabulary = [
+                    '自由', '和平', '梦想', '爱情', '智慧', '勇气', '希望', '真诚', '快乐',
+                    '阳光', '星空', '海洋', '山川', '森林', '河流', '沙漠', '草原', '花朵',
+                    '音乐', '艺术', '诗歌', '舞蹈', '绘画', '电影', '书籍', '戏剧', '摄影',
+                    '时间', '空间', '真理', '知识', '科学', '哲学', '历史', '未来', '宇宙',
+                    '友谊', '家庭', '团结', '信任', '尊重', '理解', '包容', '感恩', '分享',
+                    '成长', '改变', '挑战', '探索', '发现', '创造', '创新', '突破', '成功',
+                    '平静', '和谐', '平衡', '自然', '简单', '纯净', '清新', '宁静', '温暖',
+                    '热情', '活力', '激情', '冒险', '旅行', '运动', '健康', '美食', '欢笑',
+                    '神秘', '魔法', '奇迹'
+                ];
+
+                // 游戏数据
+                const gameData = reactive({
+                    words: [],
+                    targetWord: '',
+                    targetPositions: [],
+                    currentNumber: 1,
+                    countdown: 5,
+                    selectionCountdown: 5,
+                    countdownInterval: null,
+                    numberInterval: null,
+                    selectionInterval: null,
+                    showResult: false
+                });
+
+                // 倒计时百分比
+                const countdownPercent = computed(() => {
+                    return (gameData.countdown / 5) * 100;
+                });
+
+                // 选择界面倒计时百分比
+                const selectionCountdownPercent = computed(() => {
+                    return (gameData.selectionCountdown / 5) * 100;
+                });
+
+                // 开始游戏
+                const startGame = () => {
+                    // 重置游戏数据
+                    resetGameData();
+
+                    // 随机选择目标词汇
+                    gameData.targetWord = vocabulary[Math.floor(Math.random() * vocabulary.length)];
+
+                    // 生成目标位置（5-7个不连续的位置）
+                    generateTargetPositions();
+
+                    // 创建词汇表（72个）
+                    createWordsGrid();
+
+                    // 进入数字记忆界面
+                    gameState.value = 'numbers';
+
+                    // 开始倒计时
+                    startCountdown();
+
+                    // 开始循环显示数字
+                    startNumberCycle();
+                };
+
+                // 重置游戏数据
+                const resetGameData = () => {
+                    gameData.words = [];
+                    gameData.targetWord = '';
+                    gameData.targetPositions = [];
+                    gameData.currentNumber = 1;
+                    gameData.countdown = 5;
+                    gameData.selectionCountdown = 5;
+                    gameData.showResult = false;
+
+                    if (gameData.countdownInterval) {
+                        clearInterval(gameData.countdownInterval);
+                    }
+                    if (gameData.numberInterval) {
+                        clearInterval(gameData.numberInterval);
+                    }
+                    if (gameData.selectionInterval) {
+                        clearInterval(gameData.selectionInterval);
+                    }
+                };
+
+                // 生成目标位置（72个位置）
+                const generateTargetPositions = () => {
+                    const positions = [];
+                    const count = Math.floor(Math.random() * 3) + 6; // 5-7个位置
+
+                    while (positions.length < count) {
+                        const pos = Math.floor(Math.random() * 72);
+
+                        // 确保位置不连续
+                        const isAdjacent = positions.some(p =>
+                            Math.abs(p - pos) <= 1 ||
+                            Math.abs(p - pos) === 9 ||
+                            Math.abs(p - pos) === 10 ||
+                            Math.abs(p - pos) === 11
+                        );
+
+                        if (!positions.includes(pos) && !isAdjacent) {
+                            positions.push(pos);
+                        }
+                    }
+
+                    gameData.targetPositions = positions;
+                };
+
+                // 创建词汇网格（72个）
+                    const createWordsGrid = () => {
+    const words = Array(72).fill(null); // 初始化一个长度为 72 的数组
+    const nonTargetVocabulary = vocabulary.filter(word => word !== gameData.targetWord); // 去掉目标词汇
+    const positions = [];
+    // 随机选择 5-7 个目标词汇出现的位置
+    const targetWordPositions = new Set();
+    while (targetWordPositions.size < Math.floor(Math.random() * 3) + 5) { // 随机 5-7 个
+        targetWordPositions.add(Math.floor(Math.random() * 72));
+    }
+
+    // 填入目标词汇
+    targetWordPositions.forEach(position => {
+        words[position] = gameData.targetWord;
+        positions.push(position);
+    });
+    gameData.targetPositions = positions;
+    // 填入非目标词汇
+    let nonTargetIndex = 0;
+    for (let i = 0; i < 72; i++) {
+        if (!targetWordPositions.has(i)) {
+            words[i] = nonTargetVocabulary[nonTargetIndex];
+            nonTargetIndex++;
+        }
+    }
+
+    gameData.words = words; // 更新词汇表到游戏数据
+};
+
+
+                // 开始倒计时
+                const startCountdown = () => {
+                    gameData.countdownInterval = setInterval(() => {
+                        gameData.countdown -= 1;
+
+                        if (gameData.countdown <= 0) {
+                            clearInterval(gameData.countdownInterval);
+                            gameState.value = 'selection';
+                            startSelectionCountdown();
+                        }
+                    }, 1000);
+                };
+
+                // 开始词汇选择倒计时
+                const startSelectionCountdown = () => {
+                    gameData.selectionInterval = setInterval(() => {
+                        gameData.selectionCountdown -= 1;
+
+                        if (gameData.selectionCountdown <= 0) {
+                            clearInterval(gameData.selectionInterval);
+                            revealResult();
+                        }
+                    }, 1000);
+                };
+
+                // 开始数字循环
+                const startNumberCycle = () => {
+                    let index = 0;
+                    gameData.numberInterval = setInterval(() => {
+                        // 在目标位置中循环
+                        gameData.currentNumber = gameData.targetPositions[index] + 1;
+                        index = (index + 1) % gameData.targetPositions.length;
+                    }, 90); // 每300ms切换一次数字
+                };
+
+                // 选择词汇
+                const selectWord = (index) => {
+                    // 用户点击后立即显示结果
+                    clearInterval(gameData.selectionInterval);
+                    revealResult();
+                };
+
+                // 显示结果
+                const revealResult = () => {
+                    clearInterval(gameData.countdownInterval);
+                    clearInterval(gameData.numberInterval);
+                    clearInterval(gameData.selectionInterval);
+                    gameState.value = 'result';
+
+                    // 3秒后显示结果
+                    setTimeout(() => {
+                        gameData.showResult = true;
+                    }, 3000);
+                };
+
+                // 重置游戏
+                const resetGame = () => {
+                    resetGameData();
+                    gameState.value = 'start';
+                };
+
+                return {
+                    gameState,
+                    words: computed(() => gameData.words),
+                    targetWord: computed(() => gameData.targetWord),
+                    currentNumber: computed(() => gameData.currentNumber),
+                    countdown: computed(() => gameData.countdown),
+                    countdownPercent,
+                    selectionCountdownPercent,
+                    showResult: computed(() => gameData.showResult),
+                    startGame,
+                    selectWord,
+                    resetGame
+                };
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>
