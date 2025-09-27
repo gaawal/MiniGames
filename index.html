@@ -399,14 +399,14 @@
             const getGameLink = (game) => {
                 // 如果是Vue项目，通常入口在dist/index.html
                 if (game.type === 'vue') {
-                    return `${basePath.value}${game.path}/dist/`;
+                    return `${basePath.value}${game.path}/dist/index.html`;
                 }
                 // 如果是Cocos项目，通常入口在发布目录
                 else if (game.type === 'cocos') {
-                    return `${basePath.value}${game.path}/web-desktop/`;
+                    return `${basePath.value}${game.path}/web-desktop/index.html`;
                 }
                 // 普通HTML项目
-                return `${basePath.value}${game.path}/`;
+                return `${basePath.value}${game.path}/index.html`;
             };
 
             // 设置活动分类
