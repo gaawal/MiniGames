@@ -131,237 +131,316 @@
     </style>
 </head>
 <body class="min-h-screen">
-    <div id="app" class="flex flex-col min-h-screen">
-        <!-- 导航栏 -->
-        <nav class="bg-steam-darker py-4 px-6 border-b border-steam-card">
-            <div class="container mx-auto flex justify-between items-center">
-                <div class="flex items-center space-x-2">
-                    <div class="w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center floating">
-                        <i class="fas fa-gamepad text-white"></i>
-                    </div>
-                    <h1 class="text-2xl font-bold text-white">Mini<span class="text-steam-accent">Games</span></h1>
+<div id="app" class="flex flex-col min-h-screen">
+    <!-- 导航栏 -->
+    <nav class="bg-steam-darker py-4 px-6 border-b border-steam-card">
+        <div class="container mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+                <div class="w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center floating">
+                    <i class="fas fa-gamepad text-white"></i>
                 </div>
+                <h1 class="text-2xl font-bold text-white">Mini<span class="text-steam-accent">Games</span></h1>
+            </div>
 
-                <div class="hidden md:flex space-x-6">
-                    <a href="#" class="text-white hover:text-steam-accent transition">首页</a>
-                    <a href="#" class="text-gray-400 hover:text-white transition">游戏库</a>
-                    <a href="#" class="text-gray-400 hover:text-white transition">社区</a>
-                    <a href="#" class="text-gray-400 hover:text-white transition">关于</a>
-                </div>
+            <div class="hidden md:flex space-x-6">
+                <a href="#" class="text-white hover:text-steam-accent transition">首页</a>
+                <a href="#" class="text-gray-400 hover:text-white transition">游戏库</a>
+                <a href="#" class="text-gray-400 hover:text-white transition">社区</a>
+                <a href="#" class="text-gray-400 hover:text-white transition">关于</a>
+            </div>
 
-                <div class="flex items-center space-x-4">
-                    <button class="bg-steam-accent hover:bg-blue-500 text-white px-4 py-2 rounded transition">
-                        <i class="fas fa-user mr-2"></i>登录
+            <div class="flex items-center space-x-4">
+                <button class="bg-steam-accent hover:bg-blue-500 text-white px-4 py-2 rounded transition">
+                    <i class="fas fa-user mr-2"></i>登录
+                </button>
+                <button class="md:hidden text-white">
+                    <i class="fas fa-bars text-xl"></i>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 头部横幅 -->
+    <header class="relative py-20 overflow-hidden">
+        <div class="absolute inset-0 hero-gradient opacity-80"></div>
+        <div class="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1511512578047-dba367674b09?auto=format&fit=crop')] bg-cover bg-center opacity-20"></div>
+
+        <div class="container mx-auto px-4 relative z-10 text-center">
+            <div class="max-w-3xl mx-auto">
+                <h2 class="text-4xl md:text-6xl font-bold text-white mb-4 glow-text">探索精彩小游戏世界</h2>
+                <p class="text-xl text-gray-200 mb-8">奇思妙想脑洞大开合集 - 无需下载，即开即玩！</p>
+
+                <div class="flex justify-center space-x-4">
+                    <button @click="scrollToGames" class="bg-steam-accent hover:bg-blue-500 text-white px-6 py-3 rounded-lg font-medium transition flex items-center">
+                        <i class="fas fa-play mr-2"></i> 开始游戏
                     </button>
-                    <button class="md:hidden text-white">
-                        <i class="fas fa-bars text-xl"></i>
+                    <button class="bg-white bg-opacity-10 hover:bg-opacity-20 text-white px-6 py-3 rounded-lg font-medium transition border border-white border-opacity-20">
+                        了解更多
                     </button>
                 </div>
             </div>
-        </nav>
+        </div>
+    </header>
 
-        <!-- 头部横幅 -->
-        <header class="relative py-20 overflow-hidden">
-            <div class="absolute inset-0 hero-gradient opacity-80"></div>
-            <div class="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1511512578047-dba367674b09?auto=format&fit=crop')] bg-cover bg-center opacity-20"></div>
+    <!-- 主内容区 -->
+    <main class="flex-grow py-12">
+        <div class="container mx-auto px-4">
+            <div class="flex justify-between items-center mb-10">
+                <h2 class="text-3xl font-bold text-white" id="games-section">精选游戏</h2>
 
-            <div class="container mx-auto px-4 relative z-10 text-center">
-                <div class="max-w-3xl mx-auto">
-                    <h2 class="text-4xl md:text-6xl font-bold text-white mb-4 glow-text">探索精彩小游戏世界</h2>
-                    <p class="text-xl text-gray-200 mb-8">奇思妙想脑洞大开合集 - 无需下载，即开即玩！</p>
-
-                    <div class="flex justify-center space-x-4">
-                        <button class="bg-steam-accent hover:bg-blue-500 text-white px-6 py-3 rounded-lg font-medium transition flex items-center">
-                            <i class="fas fa-play mr-2"></i> 开始游戏
-                        </button>
-                        <button class="bg-white bg-opacity-10 hover:bg-opacity-20 text-white px-6 py-3 rounded-lg font-medium transition border border-white border-opacity-20">
-                            了解更多
-                        </button>
-                    </div>
+                <div class="flex space-x-2">
+                    <button
+                            v-for="(cat, index) in categories"
+                            :key="index"
+                            @click="setActiveCategory(cat)"
+                            class="category-btn px-4 py-2 rounded-lg text-sm"
+                            :class="{'active': activeCategory === cat || (cat === '全部' && activeCategory === '')}"
+                    >
+                        {{ cat }}
+                    </button>
                 </div>
             </div>
-        </header>
 
-        <!-- 主内容区 -->
-        <main class="flex-grow py-12">
-            <div class="container mx-auto px-4">
-                <div class="flex justify-between items-center mb-10">
-                    <h2 class="text-3xl font-bold text-white">精选游戏</h2>
-
-                    <div class="flex space-x-2">
-                        <button class="category-btn px-4 py-2 rounded-lg text-sm active">全部</button>
-                        <button class="category-btn px-4 py-2 rounded-lg text-sm">趣味</button>
-                        <button class="category-btn px-4 py-2 rounded-lg text-sm">工具</button>
-                        <button class="category-btn px-4 py-2 rounded-lg text-sm">休闲</button>
-                    </div>
-                </div>
-
-                <!-- 游戏网格 -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                    <!-- 游戏卡片 - 使用Vue循环渲染 -->
-                    <div v-for="game in games" :key="game.id" class="game-card">
-                        <div class="game-image" :style="{ backgroundImage: `url('${game.image}')` }">
-                            <span class="game-badge">免费</span>
-                            <div class="play-overlay">
-                                <button class="bg-steam-accent hover:bg-blue-500 text-white rounded-full w-16 h-16 flex items-center justify-center">
-                                    <i class="fas fa-play text-2xl"></i>
-                                </button>
-                            </div>
+            <!-- 游戏网格 -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                <!-- 游戏卡片 - 使用Vue循环渲染 -->
+                <div
+                        v-for="game in filteredGames"
+                        :key="game.id"
+                        class="game-card"
+                >
+                    <div class="game-image" :style="{ backgroundImage: `url('${game.image}')` }">
+                            <span class="game-badge">
+                                <i v-if="game.type === 'vue'" class="fab fa-vuejs mr-1"></i>
+                                <i v-else-if="game.type === 'cocos'" class="fas fa-gamepad mr-1"></i>
+                                {{ game.badge || '免费' }}
+                            </span>
+                        <div class="play-overlay">
+                            <a :href="getGameLink(game)" class="bg-steam-accent hover:bg-blue-500 text-white rounded-full w-16 h-16 flex items-center justify-center">
+                                <i class="fas fa-play text-2xl"></i>
+                            </a>
                         </div>
-                        <div class="p-4">
-                            <h3 class="text-xl font-bold text-white mb-2">{{ game.name }}</h3>
-                            <p class="text-gray-300 text-sm mb-4">{{ game.description }}</p>
+                    </div>
+                    <div class="p-4">
+                        <h3 class="text-xl font-bold text-white mb-2">{{ game.name }}</h3>
+                        <p class="text-gray-300 text-sm mb-4">{{ game.description }}</p>
+                        <div class="text-xs text-gray-400 mb-2 flex items-center">
+                            <i class="fas fa-folder mr-1"></i> 目录: {{ game.path }}
+                        </div>
 
-                            <div class="flex justify-between items-center">
-                                <div class="flex space-x-2">
-                                    <span class="text-xs bg-gray-700 px-2 py-1 rounded">{{ game.category }}</span>
-                                </div>
-
-                                <a :href="game.link" class="text-steam-accent hover:text-blue-400 transition flex items-center">
-                                    开始游戏 <i class="fas fa-arrow-right ml-1 text-xs"></i>
-                                </a>
+                        <div class="flex justify-between items-center">
+                            <div class="flex space-x-2">
+                                <span class="text-xs bg-gray-700 px-2 py-1 rounded">{{ game.category }}</span>
+                                <span v-if="game.type" class="text-xs bg-purple-600 px-2 py-1 rounded">
+                                        {{ game.type === 'vue' ? 'Vue构建' : game.type === 'cocos' ? 'Cocos游戏' : 'HTML5' }}
+                                    </span>
                             </div>
+
+                            <a :href="getGameLink(game)" class="text-steam-accent hover:text-blue-400 transition flex items-center">
+                                开始游戏 <i class="fas fa-arrow-right ml-1 text-xs"></i>
+                            </a>
                         </div>
                     </div>
                 </div>
             </div>
-        </main>
+        </div>
+    </main>
 
-        <!-- 页脚 -->
-        <footer class="footer py-10 mt-16">
-            <div class="container mx-auto px-4">
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
-                    <div>
-                        <div class="flex items-center space-x-2 mb-4">
-                            <div class="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center">
-                                <i class="fas fa-gamepad text-white text-sm"></i>
-                            </div>
-                            <h3 class="text-xl font-bold text-white">Mini<span class="text-steam-accent">Games</span></h3>
+    <!-- 页脚 -->
+    <footer class="footer py-10 mt-16">
+        <div class="container mx-auto px-4">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <div>
+                    <div class="flex items-center space-x-2 mb-4">
+                        <div class="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center">
+                            <i class="fas fa-gamepad text-white text-sm"></i>
                         </div>
-                        <p class="text-gray-400 text-sm">
-                            收集高品质脑洞小游戏，无需下载，即开即玩！
-                        </p>
+                        <h3 class="text-xl font-bold text-white">Mini<span class="text-steam-accent">Games</span></h3>
                     </div>
+                    <p class="text-gray-400 text-sm">
+                        收集高品质脑洞小游戏，无需下载，即开即玩！
+                    </p>
+                </div>
 
-                    <div>
-                        <h4 class="text-white font-semibold mb-4">快速链接</h4>
-                        <ul class="space-y-2">
-                            <li><a href="#" class="text-gray-400 hover:text-white transition text-sm">首页</a></li>
-                            <li><a href="#" class="text-gray-400 hover:text-white transition text-sm">所有游戏</a></li>
-                            <li><a href="#" class="text-gray-400 hover:text-white transition text-sm">最新发布</a></li>
-                            <li><a href="#" class="text-gray-400 hover:text-white transition text-sm">热门游戏</a></li>
-                        </ul>
-                    </div>
+                <div>
+                    <h4 class="text-white font-semibold mb-4">快速链接</h4>
+                    <ul class="space-y-2">
+                        <li><a href="#" class="text-gray-400 hover:text-white transition text-sm">首页</a></li>
+                        <li><a href="#games-section" class="text-gray-400 hover:text-white transition text-sm">所有游戏</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition text-sm">最新发布</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition text-sm">热门游戏</a></li>
+                    </ul>
+                </div>
 
-                    <div>
-                        <h4 class="text-white font-semibold mb-4">支持</h4>
-                        <ul class="space-y-2">
-                            <li><a href="#" class="text-gray-400 hover:text-white transition text-sm">常见问题</a></li>
-                            <li><a href="#" class="text-gray-400 hover:text-white transition text-sm">联系支持</a></li>
-                            <li><a href="#" class="text-gray-400 hover:text-white transition text-sm">反馈建议</a></li>
-                        </ul>
-                    </div>
+                <div>
+                    <h4 class="text-white font-semibold mb-4">支持</h4>
+                    <ul class="space-y-2">
+                        <li><a href="#" class="text-gray-400 hover:text-white transition text-sm">常见问题</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition text-sm">联系支持</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition text-sm">反馈建议</a></li>
+                    </ul>
+                </div>
 
-                    <div>
-                        <h4 class="text-white font-semibold mb-4">关注我们</h4>
-                        <div class="flex space-x-4 mb-4">
-                            <a href="#" class="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center hover:bg-steam-accent transition">
-                                <i class="fab fa-github"></i>
-                            </a>
-                            <a href="#" class="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center hover:bg-blue-500 transition">
-                                <i class="fab fa-twitter"></i>
-                            </a>
-                            <a href="#" class="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center hover:bg-red-500 transition">
-                                <i class="fab fa-youtube"></i>
-                            </a>
-                        </div>
-                        <p class="text-gray-400 text-sm">
-                            © 2023 MiniGames Collection. 保留所有权利。
-                        </p>
+                <div>
+                    <h4 class="text-white font-semibold mb-4">关注我们</h4>
+                    <div class="flex space-x-4 mb-4">
+                        <a href="https://github.com/gaawal" class="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center hover:bg-steam-accent transition">
+                            <i class="fab fa-github"></i>
+                        </a>
+                        <a href="#" class="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center hover:bg-blue-500 transition">
+                            <i class="fab fa-twitter"></i>
+                        </a>
+                        <a href="#" class="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center hover:bg-red-500 transition">
+                            <i class="fab fa-youtube"></i>
+                        </a>
                     </div>
+                    <p class="text-gray-400 text-sm">
+                        © 2023 MiniGames Collection. 保留所有权利。
+                    </p>
                 </div>
             </div>
-        </footer>
-    </div>
+        </div>
+    </footer>
+</div>
 
-    <script>
-        const { createApp, ref } = Vue
+<script>
+    const { createApp, ref, computed } = Vue
 
-        createApp({
-            setup() {
-                // 游戏数据配置
-                const games = ref([
-                    {
-                        id: 1,
-                        name: "微信步数修改器",
-                        description: "轻松修改微信运动步数，让你的步数在朋友圈中脱颖而出！",
-                        category: "工具",
-                        image: "https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?auto=format&fit=crop&w=600",
-                        link: "WeixinSteps"
-                    },
-                    {
-                        id: 2,
-                        name: "读心术",
-                        description: "神秘的心理测试游戏，能够准确预测你的想法！",
-                        category: "趣味",
-                        image: "https://images.unsplash.com/photo-1589652717521-10c0d092dea9?auto=format&fit=crop&w=600",
-                        link: "MindReading"
-                    },
-                    {
-                        id: 3,
-                        name: "像素婴儿养成机",
-                        description: "让你提前下带娃的手足无措！",
-                        category: "模拟",
-                        image: "https://images.unsplash.com/photo-1541692646448-22e2e0f8a4e9?auto=format&fit=crop&w=600",
-                        link: "BabyMonitor"
-                    },
-                    {
-                        id: 4,
-                        name: "奇怪的数字气球",
-                        description: "复古风格的像素冒险游戏，探索神秘世界！",
-                        category: "益智",
-                        image: "https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=600",
-                        link: "BalloonGame"
-                    },
-                    {
-                        id: 5,
-                        name: "宝可梦记忆游戏",
-                        description: "作为训练师，你必须快速记住所有宝可梦！",
-                        category: "益智",
-                        image: "https://images.unsplash.com/photo-1506260408121-e353d10b87c7?auto=format&fit=crop&w=600",
-                        link: "PokemonMemory"
-                    },
-                    {
-                        id: 6,
-                        name: "太空射击",
-                        description: "在浩瀚宇宙中与外星敌人战斗的刺激射击游戏",
-                        category: "动作",
-                        image: "https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&w=600",
-                        link: "SpaceShooter"
-                    },
-                    {
-                        id: 7,
-                        name: "单词大师",
-                        description: "挑战你的词汇量，成为单词大师！",
-                        category: "教育",
-                        image: "https://images.unsplash.com/photo-1507925921958-8a62f3d1a50d?auto=format&fit=crop&w=600",
-                        link: "WordMaster"
-                    },
-                    {
-                        id: 8,
-                        name: "节奏大师",
-                        description: "跟随音乐节奏，挑战你的反应速度！",
-                        category: "音乐",
-                        image: "https://images.unsplash.com/photo-1511379938547-c1f69419868d?auto=format&fit=crop&w=600",
-                        link: "RhythmMaster"
-                    }
-                ]);
+    createApp({
+        setup() {
+            // 基本路径配置 - 适应不同部署环境
+            const basePath = ref('./');
 
-                return {
-                    games
+            // 游戏分类
+            const categories = ref(['全部', '工具', '趣味', '益智', '模拟', '动作']);
+            const activeCategory = ref('');
+
+            // 游戏数据配置
+            const games = ref([
+                {
+                    id: 1,
+                    name: "微信步数修改器",
+                    description: "轻松修改微信运动步数，让你的步数在朋友圈中脱颖而出！",
+                    category: "工具",
+                    image: "https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?auto=format&fit=crop&w=600",
+                    path: "WeixinSteps",
+                    badge: "热门",
+                    type: "html" // Vue构建项目
+                },
+                {
+                    id: 2,
+                    name: "读心术",
+                    description: "神秘的心理测试游戏，能够准确预测你的想法！",
+                    category: "趣味",
+                    image: "https://images.unsplash.com/photo-1589652717521-10c0d092dea9?auto=format&fit=crop&w=600",
+                    path: "MindReading",
+                    type: "html"
+                },
+                {
+                    id: 3,
+                    name: "像素婴儿养成机",
+                    description: "让你提前体验带娃的手足无措！",
+                    category: "模拟",
+                    image: "https://images.unsplash.com/photo-1541692646448-22e2e0f8a4e9?auto=format&fit=crop&w=600",
+                    path: "BabyMonitor",
+                    badge: "新上线",
+                    type: "html" // Vue构建项目
+                },
+                {
+                    id: 4,
+                    name: "奇怪的数字气球",
+                    description: "复古风格的像素冒险游戏，探索神秘世界！",
+                    category: "益智",
+                    image: "https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=600",
+                    path: "BalloonGame",
+                    type: "cocos" // Cocos游戏
+                },
+                {
+                    id: 5,
+                    name: "宝可梦记忆游戏",
+                    description: "作为训练师，你必须快速记住所有宝可梦！",
+                    category: "益智",
+                    image: "https://images.unsplash.com/photo-1506260408121-e353d10b87c7?auto=format&fit=crop&w=600",
+                    path: "PokemonMemory",
+                    type: "vue"
+                },
+                {
+                    id: 6,
+                    name: "太空射击",
+                    description: "在浩瀚宇宙中与外星敌人战斗的刺激射击游戏",
+                    category: "动作",
+                    image: "https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&w=600",
+                    path: "SpaceShooter",
+                    type: "cocos" // Cocos游戏
+                },
+                {
+                    id: 7,
+                    name: "单词大师",
+                    description: "挑战你的词汇量，成为单词大师！",
+                    category: "益智",
+                    image: "https://images.unsplash.com/photo-1507925921958-8a62f3d1a50d?auto=format&fit=crop&w=600",
+                    path: "WordMaster",
+                    badge: "教育",
+                    type: "html"
+                },
+                {
+                    id: 8,
+                    name: "节奏大师",
+                    description: "跟随音乐节奏，挑战你的反应速度！",
+                    category: "趣味",
+                    image: "https://images.unsplash.com/photo-1511379938547-c1f69419868d?auto=format&fit=crop&w=600",
+                    path: "RhythmMaster",
+                    badge: "音乐",
+                    type: "html"
                 }
+            ]);
+
+            // 根据类型生成正确的游戏链接
+            const getGameLink = (game) => {
+                // 如果是Vue项目，通常入口在dist/index.html
+                if (game.type === 'vue') {
+                    return `${basePath.value}${game.path}/dist/`;
+                }
+                // 如果是Cocos项目，通常入口在发布目录
+                else if (game.type === 'cocos') {
+                    return `${basePath.value}${game.path}/web-desktop/`;
+                }
+                // 普通HTML项目
+                return `${basePath.value}${game.path}/`;
+            };
+
+            // 设置活动分类
+            const setActiveCategory = (category) => {
+                activeCategory.value = category === '全部' ? '' : category;
+            };
+
+            // 滚动到游戏区域
+            const scrollToGames = () => {
+                document.getElementById('games-section').scrollIntoView({
+                    behavior: 'smooth'
+                });
+            };
+
+            // 过滤游戏
+            const filteredGames = computed(() => {
+                if (!activeCategory.value) return games.value;
+                return games.value.filter(game =>
+                    game.category === activeCategory.value
+                );
+            });
+
+            return {
+                basePath,
+                games,
+                getGameLink,
+                categories,
+                activeCategory,
+                setActiveCategory,
+                filteredGames,
+                scrollToGames
             }
-        }).mount('#app')
-    </script>
+        }
+    }).mount('#app')
+</script>
 </body>
 </html>
