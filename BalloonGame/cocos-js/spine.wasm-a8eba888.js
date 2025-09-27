@@ -1,4 +1,4 @@
-System.register(['./_virtual_cc-095fe134.js'], (function (exports) {
+System.register(['./virtual_cc-095fe134.js'], (function (exports) {
   'use strict';
   var _createForOfIteratorHelperLoose;
   return {
