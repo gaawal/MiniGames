@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>骰子对决</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.2.31/dist/vue.global.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap');
+
+        body {
+            background: linear-gradient(135deg, #1b2838 0%, #0c0e12 100%);
+            min-height: 100vh;
+            font-family: 'Montserrat', sans-serif;
+            color: #c6d4df;
+            overflow-y: auto;
+            touch-action: manipulation;
+        }
+
+        .steam-card {
+            background: rgba(23, 26, 33, 0.85);
+            border: 1px solid #66c0f4;
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(12px);
+            overflow: hidden;
+        }
+
+        .glow-effect {
+            box-shadow: 0 0 20px rgba(102, 192, 244, 0.7);
+        }
+
+        .dice-container {
+            perspective: 1000px;
+            margin: 0 auto;
+            position: relative;
+            height: 180px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .cube {
+            position: relative;
+            width: 100px;
+            height: 100px;
+            transform-style: preserve-3d;
+            transform: rotateX(0deg) rotateY(0deg);
+            transition: transform 0.5s ease;
+        }
+
+        .cube-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(145deg, #2a475e, #1b2838);
+            border: 2px solid #66c0f4;
+            border-radius: 16px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 2.5rem;
+            color: #66c0f4;
+            font-weight: bold;
+            box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.8);
+        }
+
+        .cube-face:before {
+            content: "";
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 14px;
+            background: rgba(102, 192, 244, 0.1);
+            box-shadow: 0 0 20px rgba(102, 192, 244, 0.3) inset;
+        }
+
+        .cube-face-1 { transform: translateZ(50px); }
+        .cube-face-2 { transform: rotateY(90deg) translateZ(50px); }
+        .cube-face-3 { transform: rotateX(90deg) translateZ(50px); }
+        .cube-face-4 { transform: rotateX(-90deg) translateZ(50px); }
+        .cube-face-5 { transform: rotateY(-90deg) translateZ(50px); }
+        .cube-face-6 { transform: rotateY(180deg) translateZ(50px); }
+
+        .rolling {
+            animation: roll 1.5s ease-out;
+        }
+
+        @keyframes roll {
+            0% { transform: rotateX(0) rotateY(0) rotateZ(0); }
+            100% { transform: rotateX(720deg) rotateY(1080deg) rotateZ(360deg); }
+        }
+
+        .btn-steam {
+            background: linear-gradient(to bottom, #67c1f5 0%, #3182b5 100%);
+            border: 1px solid #3182b5;
+            color: #d2eaf9;
+            font-weight: 600;
+            padding: 16px 24px;
+            border-radius: 12px;
+            cursor: pointer;
+            outline: none;
+            transition: all 0.2s;
+            font-size: 1.1rem;
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+            width: 100%;
+            max-width: 300px;
+            margin: 8px auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-steam:hover, .btn-steam:active {
+            background: linear-gradient(to bottom, #7acbf8 0%, #3b91c2 100%);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
+        }
+
+        .btn-steam:active {
+            transform: translateY(2px);
+        }
+
+        .btn-steam:disabled {
+            background: #4a5568;
+            transform: none;
+            box-shadow: none;
+            cursor: not-allowed;
+        }
+
+        .health-bar {
+            height: 16px;
+            border-radius: 8px;
+            background: #1b2838;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .health-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4caf50, #2e7d32);
+            transition: width 0.5s ease;
+        }
+
+        .health-text {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            text-align: center;
+            font-weight: 600;
+            color: white;
+            text-shadow: 0 0 4px rgba(0,0,0,0.8);
+            font-size: 0.8rem;
+            line-height: 16px;
+        }
+
+        .result-win {
+            color: #66c0f4;
+            text-shadow: 0 0 15px rgba(102, 192, 244, 0.7);
+            animation: pulse 2s infinite;
+        }
+
+        .result-lose {
+            color: #f44336;
+            text-shadow: 0 0 15px rgba(244, 67, 54, 0.7);
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        .score-badge {
+            min-width: 60px;
+            padding: 8px 12px;
+            border-radius: 20px;
+            background: rgba(42, 71, 94, 0.8);
+            border: 2px solid #66c0f4;
+            font-weight: 700;
+            text-align: center;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .dice-dot {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #66c0f4;
+            box-shadow: 0 0 10px rgba(102, 192, 244, 0.8);
+            position: absolute;
+        }
+
+        .floating-text {
+            animation: floatUp 1s ease-out forwards;
+            position: absolute;
+            color: #66c0f4;
+            font-weight: 700;
+            font-size: 1.5rem;
+            text-shadow: 0 0 8px rgba(102, 192, 244, 0.8);
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        @keyframes floatUp {
+            0% { transform: translateY(0); opacity: 1; }
+            100% { transform: translateY(-60px); opacity: 0; }
+        }
+
+        /* 竖屏优化 */
+        .game-container {
+            max-width: 500px;
+            margin: 0 auto;
+            padding: 15px;
+        }
+
+        .player-section, .npc-section {
+            transition: all 0.3s ease;
+        }
+
+        .player-section.active {
+            transform: scale(1.05);
+            border-color: #4caf50;
+        }
+
+        .npc-section.active {
+            transform: scale(1.05);
+            border-color: #f44336;
+        }
+
+        .dice-history {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+
+        .dice-history-item {
+            width: 30px;
+            height: 30px;
+            border-radius: 8px;
+            background: #2a475e;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: #66c0f4;
+            border: 1px solid #66c0f4;
+        }
+
+        .dice-result {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: #66c0f4;
+            text-shadow: 0 0 15px rgba(102, 192, 244, 0.7);
+            margin: 10px 0;
+            text-align: center;
+            min-height: 50px;
+        }
+
+        .npc-thinking {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: 10px;
+            gap: 5px;
+            color: #66c0f4;
+            font-weight: 500;
+        }
+
+        .thinking-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #66c0f4;
+            animation: bounce 1.5s infinite;
+        }
+
+        .thinking-dot:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .thinking-dot:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+    </style>
+</head>
+<body>
+<div id="app" class="game-container min-h-screen flex flex-col">
+    <!-- 顶部NPC区域 -->
+    <div class="npc-section steam-card p-4 mb-4 relative">
+        <button @click="showRules = !showRules" class="absolute top-3 right-3 text-steam-accent">
+            <i class="fas fa-info-circle text-xl"></i>
+        </button>
+
+        <div class="flex items-center justify-between mb-2">
+            <div class="flex items-center">
+                <div class="npc-avatar w-14 h-14 rounded-full bg-gray-800 flex items-center justify-center mr-3 border-2 border-steam-accent">
+                    <i class="fas fa-robot text-2xl text-steam-accent"></i>
+                </div>
+                <div>
+                    <h2 class="text-xl font-bold text-steam-accent">{{ npcName }}</h2>
+                    <div class="flex items-center text-sm">
+                        <span class="text-gray-400 mr-2">胜率:</span>
+                        <span class="font-bold">{{ npcWinRate }}%</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="score-badge text-lg">
+                <div class="text-xs text-gray-400">当前点数</div>
+                <div class="font-bold">{{ npcScore }}</div>
+            </div>
+        </div>
+
+        <div class="mt-3">
+            <div class="flex justify-between text-sm mb-1">
+                <span class="text-steam-accent">目标点数: {{ targetScore }}</span>
+                <span class="text-steam-accent">差值: {{ Math.abs(npcScore - targetScore) }}</span>
+            </div>
+            <div class="progress-container bg-gray-800 h-3 rounded-full overflow-hidden">
+                <div class="progress-fill bg-gradient-to-r from-blue-500 to-purple-600 h-full rounded-full"
+                     :style="{ width: npcProgress + '%' }"></div>
+            </div>
+        </div>
+
+        <div class="dice-history mt-3">
+            <div v-for="(dice, index) in npcHistory" :key="'npc-'+index" class="dice-history-item">
+                {{ dice }}
+            </div>
+        </div>
+
+        <!-- NPC掷骰结果 -->
+        <div v-if="npcRollValue > 0" class="dice-result mt-2">
+            NPC掷出: {{ npcRollValue }}
+        </div>
+
+        <!-- NPC决策思考动画 -->
+        <div v-if="npcThinking" class="npc-thinking">
+            <span>思考中</span>
+            <div class="thinking-dot"></div>
+            <div class="thinking-dot"></div>
+            <div class="thinking-dot"></div>
+        </div>
+    </div>
+
+    <!-- 中间游戏区域 -->
+    <div class="steam-card p-4 mb-4 flex-grow flex flex-col">
+        <div class="text-center mb-4">
+            <div class="text-xl font-bold mb-2 text-steam-accent">回合: {{ round }}</div>
+            <div class="text-3xl font-bold" :class="messageClass">{{ gameMessage }}</div>
+        </div>
+
+        <div class="dice-container">
+            <div class="cube" :class="{ rolling: isRolling }" :style="diceRotation">
+                <div class="cube-face cube-face-1">
+                    <div class="dice-dot" style="top:50%; left:50%; transform:translate(-50%,-50%)"></div>
+                </div>
+                <div class="cube-face cube-face-2">
+                    <div class="dice-dot" style="top:20%; left:20%"></div>
+                    <div class="dice-dot" style="bottom:20%; right:20%"></div>
+                </div>
+                <div class="cube-face cube-face-3">
+                    <div class="dice-dot" style="top:20%; left:20%"></div>
+                    <div class="dice-dot" style="top:50%; left:50%; transform:translate(-50%,-50%)"></div>
+                    <div class="dice-dot" style="bottom:20%; right:20%"></div>
+                </div>
+                <div class="cube-face cube-face-4">
+                    <div class="dice-dot" style="top:20%; left:20%"></div>
+                    <div class="dice-dot" style="top:20%; right:20%"></div>
+                    <div class="dice-dot" style="bottom:20%; left:20%"></div>
+                    <div class="dice-dot" style="bottom:20%; right:20%"></div>
+                </div>
+                <div class="cube-face cube-face-5">
+                    <div class="dice-dot" style="top:20%; left:20%"></div>
+                    <div class="dice-dot" style="top:20%; right:20%"></div>
+                    <div class="dice-dot" style="top:50%; left:50%; transform:translate(-50%,-50%)"></div>
+                    <div class="dice-dot" style="bottom:20%; left:20%"></div>
+                    <div class="dice-dot" style="bottom:20%; right:20%"></div>
+                </div>
+                <div class="cube-face cube-face-6">
+                    <div class="dice-dot" style="top:20%; left:20%"></div>
+                    <div class="dice-dot" style="top:20%; right:20%"></div>
+                    <div class="dice-dot" style="top:50%; left:20%"></div>
+                    <div class="dice-dot" style="top:50%; right:20%"></div>
+                    <div class="dice-dot" style="bottom:20%; left:20%"></div>
+                    <div class="dice-dot" style="bottom:20%; right:20%"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 玩家掷骰结果 -->
+        <div v-if="playerRollValue > 0" class="dice-result">
+            你掷出: {{ playerRollValue }}
+        </div>
+
+        <div class="mt-4 flex justify-between">
+            <div class="text-center">
+                <div class="text-sm text-gray-400">你的胜场</div>
+                <div class="text-2xl font-bold text-green-400">{{ playerWins }}</div>
+            </div>
+
+            <div class="text-center">
+                <div class="text-sm text-gray-400">回合</div>
+                <div class="text-2xl font-bold text-steam-accent">{{ round }}</div>
+            </div>
+
+            <div class="text-center">
+                <div class="text-sm text-gray-400">对手胜场</div>
+                <div class="text-2xl font-bold text-red-400">{{ npcWins }}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 底部玩家区域 -->
+    <div class="player-section steam-card p-4 mb-4 relative">
+        <div class="flex items-center justify-between mb-3">
+            <div class="flex items-center">
+                <div class="player-avatar w-14 h-14 rounded-full bg-gray-800 flex items-center justify-center mr-3 border-2 border-steam-accent">
+                    <i class="fas fa-user text-2xl text-steam-accent"></i>
+                </div>
+                <div>
+                    <h2 class="text-xl font-bold text-steam-accent">玩家昵称</h2>
+                    <div class="flex items-center text-sm">
+                        <div class="w-16 bg-gray-700 rounded-full h-2 mr-2">
+                            <div class="bg-green-500 h-2 rounded-full" :style="{ width: playerLevelProgress + '%' }"></div>
+                        </div>
+                        <span>Lv.{{ playerLevel }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="score-badge text-lg">
+                <div class="text-xs text-gray-400">当前点数</div>
+                <div class="font-bold">{{ playerScore }}</div>
+            </div>
+        </div>
+
+        <div class="mt-3">
+            <div class="flex justify-between text-sm mb-1">
+                <span class="text-steam-accent">目标点数: {{ targetScore }}</span>
+                <span class="text-steam-accent">差值: {{ Math.abs(playerScore - targetScore) }}</span>
+            </div>
+            <div class="progress-container bg-gray-800 h-3 rounded-full overflow-hidden">
+                <div class="progress-fill bg-gradient-to-r from-yellow-500 to-orange-600 h-full rounded-full"
+                     :style="{ width: playerProgress + '%' }"></div>
+            </div>
+        </div>
+
+        <div class="dice-history mt-3">
+            <div v-for="(dice, index) in playerHistory" :key="'player-'+index" class="dice-history-item">
+                {{ dice }}
+            </div>
+        </div>
+    </div>
+
+    <!-- 操作按钮区域 -->
+    <div class="steam-card p-4 mb-4">
+        <div class="flex flex-col">
+            <button @click="rollDice" :disabled="!playerTurn || isRolling" class="btn-steam glow-effect mb-3">
+                <i class="fas fa-dice mr-2"></i> {{ rollButtonText }}
+            </button>
+
+            <div class="grid grid-cols-2 gap-3">
+                <button @click="hold" :disabled="!canHold || isRolling" class="btn-steam">
+                    <i class="fas fa-hand-paper mr-2"></i> 停止
+                </button>
+
+                <button @click="nextRound" :disabled="!canNextRound" class="btn-steam bg-gradient-to-r from-green-600 to-teal-600">
+                    <i class="fas fa-forward mr-2"></i> 下一回合
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 游戏规则弹窗 -->
+    <div v-if="showRules" class="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 p-4">
+        <div class="steam-card p-6 max-w-md w-full">
+            <h2 class="text-2xl font-bold text-steam-accent mb-4 text-center">游戏规则</h2>
+
+            <ul class="space-y-3 text-gray-300">
+                <li class="flex items-start">
+                    <i class="fas fa-dice mr-3 mt-1 text-steam-accent"></i>
+                    <div>每回合系统随机生成目标点数（15-30之间）</div>
+                </li>
+                <li class="flex items-start">
+                    <i class="fas fa-sync mr-3 mt-1 text-steam-accent"></i>
+                    <div>玩家和AI轮流掷骰子，玩家先开始</div>
+                </li>
+                <li class="flex items-start">
+                    <i class="fas fa-bullseye mr-3 mt-1 text-steam-accent"></i>
+                    <div>目标：使你的点数最接近目标点数</div>
+                </li>
+                <li class="flex items-start">
+                    <i class="fas fa-exclamation-triangle mr-3 mt-1 text-red-400"></i>
+                    <div>如果点数超过目标点数，则立即失败</div>
+                </li>
+                <li class="flex items-start">
+                    <i class="fas fa-hand-paper mr-3 mt-1 text-steam-accent"></i>
+                    <div>选择"停止"来结束你的回合，轮到对手</div>
+                </li>
+                <li class="flex items-start">
+                    <i class="fas fa-trophy mr-3 mt-1 text-yellow-400"></i>
+                    <div>每赢得一回合提升玩家等级</div>
+                </li>
+            </ul>
+
+            <button @click="showRules = false" class="btn-steam mt-6 bg-gradient-to-r from-purple-600 to-indigo-600">
+                <i class="fas fa-times mr-2"></i> 关闭规则
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const { createApp, ref, computed, reactive } = Vue;
+
+    createApp({
+        setup() {
+            // 游戏状态
+            const playerScore = ref(0);
+            const npcScore = ref(0);
+            const playerHistory = ref([]);
+            const npcHistory = ref([]);
+            const playerRollValue = ref(0);
+            const npcRollValue = ref(0);
+            const playerWins = ref(0);
+            const npcWins = ref(0);
+            const round = ref(1);
+            const targetScore = ref(20);
+            const gameMessage = ref("准备开始游戏");
+            const messageClass = ref("text-steam-accent");
+            const isRolling = ref(false);
+            const playerTurn = ref(true);
+            const canHold = ref(false);
+            const canNextRound = ref(false);
+            const diceRotation = ref({});
+            const showRules = ref(false);
+            const playerLevel = ref(1);
+            const playerLevelProgress = ref(0);
+            const npcWinRate = ref(42);
+            const npcName = ref("骰子大师");
+            const npcThinking = ref(false);
+
+            // NPC个性类型
+            const npcPersonalities = [
+                { name: "谨慎大师", risk: 0.2, winRate: 35 },
+                { name: "骰子赌徒", risk: 0.8, winRate: 55 },
+                { name: "策略专家", risk: 0.5, winRate: 45 },
+                { name: "幸运之星", risk: 0.6, winRate: 60 }
+            ];
+
+            // 当前NPC个性
+            const currentNpcPersonality = ref(npcPersonalities[Math.floor(Math.random() * npcPersonalities.length)]);
+
+            // 初始化NPC
+            const initNpc = () => {
+                currentNpcPersonality.value = npcPersonalities[Math.floor(Math.random() * npcPersonalities.length)];
+                npcName.value = currentNpcPersonality.value.name;
+                npcWinRate.value = currentNpcPersonality.value.winRate;
+            };
+
+            // 计算进度
+            const playerProgress = computed(() => {
+                return Math.min(100, (playerScore.value / targetScore.value) * 100);
+            });
+
+            const npcProgress = computed(() => {
+                return Math.min(100, (npcScore.value / targetScore.value) * 100);
+            });
+
+            // 掷骰子按钮文本
+            const rollButtonText = computed(() => {
+                return playerHistory.value.length === 0 ? "开始掷骰子" : "再次掷骰子";
+            });
+
+            // 掷骰子函数
+            const rollDice = () => {
+                if (isRolling.value) return;
+
+                isRolling.value = true;
+                playerRollValue.value = 0;
+                npcRollValue.value = 0;
+                gameMessage.value = playerTurn.value ? "骰子旋转中..." : "对手掷骰中...";
+                messageClass.value = "text-yellow-400";
+
+                // 生成随机旋转角度
+                const xRot = Math.floor(Math.random() * 4) * 90 + 360 * 5;
+                const yRot = Math.floor(Math.random() * 4) * 90 + 360 * 5;
+                diceRotation.value = { transform: `rotateX(${xRot}deg) rotateY(${yRot}deg)` };
+
+                // 模拟骰子动画
+                setTimeout(() => {
+                    const value = Math.floor(Math.random() * 6) + 1;
+
+                    if (playerTurn.value) {
+                        playerRollValue.value = value;
+                        playerScore.value += value;
+                        playerHistory.value.push(value);
+                        gameMessage.value = `你掷出了 ${value} 点！当前 ${playerScore.value}`;
+
+                        // 检查是否超过目标
+                        if (playerScore.value > targetScore.value) {
+                            gameMessage.value = `点数超过目标！本轮失败！`;
+                            messageClass.value = "result-lose";
+                            endRound(false);
+                        } else {
+                            canHold.value = true;
+                            messageClass.value = "text-green-400";
+                        }
+                    } else {
+                        npcRollValue.value = value;
+                        npcScore.value += value;
+                        npcHistory.value.push(value);
+                        gameMessage.value = `对手掷出了 ${value} 点！当前 ${npcScore.value}`;
+
+                        // 检查是否超过目标
+                        if (npcScore.value > targetScore.value) {
+                            gameMessage.value = `对手点数超过目标！你赢了本轮！`;
+                            messageClass.value = "result-win";
+                            endRound(true);
+                        } else {
+                            // 显示NPC思考状态
+                            npcThinking.value = true;
+
+                            // AI决策是否继续
+                            setTimeout(() => {
+                                npcDecision();
+                                npcThinking.value = false;
+                            }, 1500);
+                        }
+                    }
+
+                    isRolling.value = false;
+                }, 1500);
+            };
+
+            // NPC决策函数
+            const npcDecision = () => {
+                const riskFactor = currentNpcPersonality.value.risk;
+                const diff = targetScore.value - npcScore.value;
+                const playerDiff = targetScore.value - playerScore.value;
+
+                // 策略1: 如果接近目标且领先玩家，停止
+                if (diff <= 5 && npcScore.value > playerScore.value && Math.random() < 0.8) {
+                    hold();
+                    return;
+                }
+
+                // 策略2: 如果落后很多，更可能继续掷骰
+                if (playerScore.value > npcScore.value && playerDiff < diff && Math.random() < 0.7) {
+                    rollDice();
+                    return;
+                }
+
+                // 策略3: 基于个性风险因子决策
+                if (Math.random() < riskFactor) {
+                    rollDice();
+                } else {
+                    hold();
+                }
+            };
+
+            // 停止函数
+            const hold = () => {
+                if (playerTurn.value) {
+                    gameMessage.value = `你停止了掷骰，当前点数: ${playerScore.value}`;
+                    messageClass.value = "text-steam-accent";
+                    playerTurn.value = false;
+
+                    // NPC回合
+                    setTimeout(() => {
+                        gameMessage.value = "轮到对手掷骰...";
+                        messageClass.value = "text-steam-accent";
+
+                        // NPC开始掷骰子
+                        setTimeout(() => {
+                            rollDice();
+                        }, 1000);
+                    }, 1500);
+                } else {
+                    gameMessage.value = `对手停止了掷骰，点数: ${npcScore.value}`;
+                    messageClass.value = "text-steam-accent";
+
+                    // 比较结果
+                    setTimeout(() => {
+                        compareScores();
+                    }, 1500);
+                }
+
+                canHold.value = false;
+            };
+
+            // 比较分数
+            const compareScores = () => {
+                const playerDiff = Math.abs(targetScore.value - playerScore.value);
+                const npcDiff = Math.abs(targetScore.value - npcScore.value);
+
+                if (playerDiff < npcDiff) {
+                    gameMessage.value = `你赢了本轮！${playerScore.value} vs ${npcScore.value}`;
+                    messageClass.value = "result-win";
+                    endRound(true);
+                } else if (npcDiff < playerDiff) {
+                    gameMessage.value = `你输了本轮！${playerScore.value} vs ${npcScore.value}`;
+                    messageClass.value = "result-lose";
+                    endRound(false);
+                } else {
+                    gameMessage.value = "平局！双方点数相同";
+                    messageClass.value = "text-yellow-400";
+                    endRound(null);
+                }
+            };
+
+            // 结束回合
+            const endRound = (playerWon) => {
+                if (playerWon === true) {
+                    playerWins.value++;
+                    playerLevelProgress.value += 25;
+                    if (playerLevelProgress.value >= 100) {
+                        playerLevel.value++;
+                        playerLevelProgress.value = 0;
+                    }
+                } else if (playerWon === false) {
+                    npcWins.value++;
+                }
+
+                canNextRound.value = true;
+            };
+
+            // 下一回合
+            const nextRound = () => {
+                round.value++;
+                playerScore.value = 0;
+                npcScore.value = 0;
+                playerHistory.value = [];
+                npcHistory.value = [];
+                playerRollValue.value = 0;
+                npcRollValue.value = 0;
+                playerTurn.value = true;
+                canHold.value = false;
+                canNextRound.value = false;
+
+                // 随机目标点数 (15-30之间)
+                targetScore.value = Math.floor(Math.random() * 16) + 15;
+
+                // 每3回合更换NPC个性
+                if (round.value % 3 === 0) {
+                    initNpc();
+                }
+
+                gameMessage.value = "新回合开始！轮到你掷骰子";
+                messageClass.value = "text-steam-accent";
+
+                // 更新对手胜率
+                const totalRounds = round.value - 1;
+                if (totalRounds > 0) {
+                    npcWinRate.value = Math.round((npcWins.value / totalRounds) * 100);
+                }
+            };
+
+            // 初始化游戏
+            const initGame = () => {
+                targetScore.value = Math.floor(Math.random() * 16) + 15;
+                initNpc();
+            };
+
+            initGame();
+
+            return {
+                playerScore,
+                npcScore,
+                playerHistory,
+                npcHistory,
+                playerRollValue,
+                npcRollValue,
+                playerWins,
+                npcWins,
+                round,
+                targetScore,
+                gameMessage,
+                messageClass,
+                isRolling,
+                playerTurn,
+                canHold,
+                canNextRound,
+                diceRotation,
+                showRules,
+                playerLevel,
+                playerLevelProgress,
+                npcWinRate,
+                npcName,
+                npcThinking,
+                playerProgress,
+                npcProgress,
+                rollButtonText,
+                rollDice,
+                hold,
+                nextRound
+            };
+        }
+    }).mount('#app');
+</script>
+</body>
+</html>
