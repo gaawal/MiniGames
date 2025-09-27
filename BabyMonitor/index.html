@@ -1,0 +1,1189 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>像素婴儿养成机 - 增强版</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+    <!-- 添加Font Awesome图标库 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- 内嵌动作配置（便于后续抽离为独立文件） -->
+    <script id="actions-config" type="application/json">
+        {
+            "feed": [
+                {"label": "母乳", "effect": {"satiation": 80, "energy": 5, "happiness": 5}, "message": "喂了母乳", "requireAwake": true, "growth": {"morality": 1, "physical": 1}},
+                {"label": "配方奶", "effect": {"satiation": 50, "energy": 5, "happiness": 3}, "message": "喂了配方奶", "requireAwake": true},
+                {"label": "米糊", "effect": {"satiation": 45, "energy": 3, "happiness": 2}, "message": "喂了米糊", "requireAwake": true},
+                {"label": "水果泥", "effect": {"satiation": 30, "energy": 2, "happiness": 8}, "message": "喂了水果泥", "requireAwake": true, "growth": {"aesthetics": 1}},
+                {"label": "蔬菜泥", "effect": {"satiation": 12, "energy": 3, "health": 3}, "message": "喂了蔬菜泥", "requireAwake": true},
+                {"label": "鸡蛋羹", "effect": {"satiation": 30, "energy": 4, "happiness": 15}, "message": "喂了鸡蛋羹", "requireAwake": true},
+                {"label": "鱼肉泥", "effect": {"satiation": 16, "energy": 3, "health": 5}, "message": "喂了鱼肉泥", "requireAwake": true},
+                {"label": "饼干", "effect": {"satiation": 15, "happiness": 35, "hygiene": -5}, "message": "喂了饼干", "requireAwake": true}
+            ],
+            "clean": [
+                {"label": "换尿布", "effect": {"hygiene": 40, "happiness": 5}, "message": "换了尿布", "poopClean": true, "growth": {"morality": 1}},
+                {"label": "洗澡", "effect": {"hygiene": 40, "happiness": 10}, "message": "洗了澡", "requireAwake": true},
+                {"label": "擦脸", "effect": {"hygiene": 15, "happiness": 3}, "message": "擦了脸", "requireAwake": true},
+                {"label": "换衣服", "effect": {"hygiene": 20, "happiness": 5}, "message": "换了衣服", "requireAwake": true},
+                {"label": "洗手", "effect": {"hygiene": 10, "happiness": 2}, "message": "洗了手", "requireAwake": true},
+                {"label": "梳头", "effect": {"hygiene": 8, "happiness": 4}, "message": "梳了头", "requireAwake": true},
+                {"label": "剪指甲", "effect": {"hygiene": 12, "happiness": -3}, "message": "剪了指甲", "requireAwake": true},
+                {"label": "清理耳朵", "effect": {"hygiene": 15, "happiness": -5}, "message": "清理了耳朵", "requireAwake": true}
+            ],
+            "play": [
+                {"label": "摇铃", "effect": {"happiness": 15, "energy": -10, "satiation": -5}, "message": "玩了摇铃", "requireAwake": true, "growth": {"intelligence": 1}},
+                {"label": "躲猫猫", "effect": {"happiness": 20, "energy": -15, "satiation": -7}, "message": "玩了躲猫猫", "requireAwake": true, "growth": {"intelligence": 1}},
+                {"label": "讲故事", "effect": {"happiness": 10, "energy": -5, "satiation": -3}, "message": "讲了故事", "requireAwake": true},
+                {"label": "唱歌", "effect": {"happiness": 12, "energy": -8, "satiation": -4}, "message": "唱了歌", "requireAwake": true},
+                {"label": "搭积木", "effect": {"happiness": 18, "energy": -12, "satiation": -6}, "message": "搭了积木", "requireAwake": true, "growth": {"intelligence": 2}},
+                {"label": "玩娃娃", "effect": {"happiness": 16, "energy": -9, "satiation": -5}, "message": "玩了娃娃", "requireAwake": true, "growth": {"aesthetics": 1}},
+                {"label": "玩球", "effect": {"happiness": 22, "energy": -18, "satiation": -8}, "message": "玩了球", "requireAwake": true, "growth": {"physical": 2}},
+                {"label": "跳舞", "effect": {"happiness": 25, "energy": -20, "satiation": -10}, "message": "跳了舞", "requireAwake": true, "growth": {"aesthetics": 2}}
+            ],
+            "sleep": [
+                {"label": "摇篮曲", "effect": {"energy": 45, "happiness": 5}, "message": "唱了摇篮曲", "requireAwake": true},
+                {"label": "轻拍", "effect": {"energy": 15, "happiness": 3}, "message": "轻轻拍背", "requireAwake": true},
+                {"label": "安抚奶嘴", "effect": {"energy": 10, "happiness": 2}, "message": "用了安抚奶嘴", "requireAwake": true},
+                {"label": "抱着走", "effect": {"energy": 25, "happiness": 4}, "message": "抱着走动", "requireAwake": true},
+                {"label": "讲故事", "effect": {"energy": 12, "happiness": 3}, "message": "讲了睡前故事", "requireAwake": true},
+                {"label": "放白噪音", "effect": {"energy": 18, "happiness": 2}, "message": "放了白噪音", "requireAwake": true},
+                {"label": "按摩", "effect": {"energy": 22, "happiness": 5}, "message": "做了按摩", "requireAwake": true},
+                {"label": "关灯", "effect": {"energy": 30, "happiness": -3}, "message": "关了灯", "requireAwake": true}
+            ],
+            "doctor": [
+                {"label": "量体温", "effect": {"health": 5, "happiness": -2}, "message": "量了体温"},
+                {"label": "喂药", "effect": {"health": 40, "happiness": -5}, "message": "喂了药", "growth": {"morality": 1}},
+                {"label": "看医生", "effect": {"health": 45, "happiness": -8}, "message": "看了医生"},
+                {"label": "维生素", "effect": {"health": 10, "happiness": 1}, "message": "吃了维生素"},
+                {"label": "打疫苗", "effect": {"health": 15, "happiness": -10}, "message": "打了疫苗"},
+                {"label": "物理降温", "effect": {"health": 12, "happiness": -3}, "message": "做了物理降温"},
+                {"label": "喂水", "effect": {"health": 8, "happiness": 1}, "message": "喂了水"},
+                {"label": "检查耳朵", "effect": {"health": 7, "happiness": -2}, "message": "检查了耳朵"}
+            ]
+        }
+    </script>
+    <!-- 内嵌事件配置（便于后续抽离为独立文件） -->
+    <script id="events-config" type="application/json">
+        {
+            "events": [
+                {
+                    "id": "crying",
+                    "label": "哭闹",
+                    "trigger": { "chanceHourly": 0.4, "whenAwake": true, "anyBelow": { "satiation": 30, "energy": 30, "happiness": 40 } },
+                    "durationMinutes": 60,
+                    "flags": { "isCrying": true },
+                    "modifiers": {
+                        "actionSuccess": { "feed": -0.15 },
+                        "actionEffectMultiplier": { "feed.satiation": 0.85 },
+                        "happinessDecayPerMinute": 0.2
+                    }
+                },
+                {
+                    "id": "hungry",
+                    "label": "饿了",
+                    "trigger": { "chanceHourly": 0.25 },
+                    "durationMinutes": 60,
+                    "modifiers": { "actionSuccess": { "feed": -0.05 }, "actionEffectMultiplier": { "feed.satiation": 0.9 } }
+                },
+                {
+                    "id": "pooped",
+                    "label": "便便了",
+                    "trigger": { "chanceHourly": 0.2 },
+                    "durationMinutes": 120,
+                    "flags": { "hasPooped": true },
+                    "modifiers": { "hygieneDecayPerMinute": 0.3, "happinessModifier": -0.5 },
+                    "clearOnAction": "clean"
+                }
+            ]
+        }
+    </script>
+    <link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+<div id="app" class="container mx-auto px-4 max-w-md">
+    <div class="game-title">像素婴儿养成机</div>
+    <div class="game-subtitle">照顾好你的像素宝宝！</div>
+
+    <!-- 游戏机器 -->
+    <div class="bg-red-500 rounded-2xl p-4 shadow-2xl relative">
+        <!-- 游戏结束覆盖层 -->
+        <div v-if="gameOver" class="game-overlay">
+            <h2>游戏结束</h2>
+            <p>宝宝没能撑过第{{ day }}天</p>
+            <p class="text-red-400">{{ deathReason }}</p>
+
+            <div class="stats">
+                <p>游戏时间: {{ playTime }}分钟</p>
+                <p>宝宝年龄: {{ ageDisplay }}</p>
+                <p>最终体重: {{ Math.round(weight / 1000) }} kg</p>
+            </div>
+
+            <button @click="resetGame" class="bg-blue-600 px-4 py-2 rounded hover:bg-blue-700 mt-4">
+                重新开始
+            </button>
+        </div>
+
+        <!-- 出生弹窗 -->
+        <div v-if="showBirthModal" class="game-overlay">
+            <h2>宝宝诞生了！</h2>
+            <div class="stats">
+                <p class="mb-2">请看看你家宝宝的先天资质</p>
+                <div class="status-row"><span class="status-label">德</span>
+                    <span class="flex-1 ml-2 status-bar"><span class="status-fill" :style="{width: getRacePct(race.morality), background:'#78C850'}"></span></span>
+                    <span class="ml-2">{{ race.morality }}</span>
+                </div>
+                <div class="status-row"><span class="status-label">智</span>
+                    <span class="flex-1 ml-2 status-bar"><span class="status-fill" :style="{width: getRacePct(race.intelligence), background:'#6890F0'}"></span></span>
+                    <span class="ml-2">{{ race.intelligence }}</span>
+                </div>
+                <div class="status-row"><span class="status-label">体</span>
+                    <span class="flex-1 ml-2 status-bar"><span class="status-fill" :style="{width: getRacePct(race.physical), background:'#F08030'}"></span></span>
+                    <span class="ml-2">{{ race.physical }}</span>
+                </div>
+                <div class="status-row"><span class="status-label">美</span>
+                    <span class="flex-1 ml-2 status-bar"><span class="status-fill" :style="{width: getRacePct(race.aesthetics), background:'#F85888'}"></span></span>
+                    <span class="ml-2">{{ race.aesthetics }}</span>
+                </div>
+                <div class="status-row"><span class="status-label">劳</span>
+                    <span class="flex-1 ml-2 status-bar"><span class="status-fill" :style="{width: getRacePct(race.labor), background:'#A8B820'}"></span></span>
+                    <span class="ml-2">{{ race.labor }}</span>
+                </div>
+                <div class="status-row"><span class="status-label">想象力</span>
+                    <span class="flex-1 ml-2 status-bar"><span class="status-fill" :style="{width: getRacePct(race.imagination), background:'#7038F8'}"></span></span>
+                    <span class="ml-2">{{ race.imagination }}</span>
+                </div>
+                <div class="text-center mt-3 text-xs">总和≈500（单项上限252）</div>
+            </div>
+            <button @click="closeBirthModal" class="bg-blue-600 px-4 py-2 rounded hover:bg-blue-700 mt-4">开始游戏</button>
+        </div>
+
+        <!-- 屏幕区域 -->
+        <div class="lcd-screen rounded-lg relative screen-container">
+            <!-- 状态栏 -->
+            <div class="grid grid-cols-5 gap-2 p-2">
+                <div v-for="(value, key) in status" :key="key" class="text-center">
+                    <div class="text-xs text-gray-700 mb-1">{{ getStatusName(key) }}</div>
+                    <div class="status-bar">
+                        <div class="status-fill" :class="getStatusColor(value, maxStatus[key])"
+                             :style="{width: (value / maxStatus[key] * 100) + '%'}"></div>
+                    </div>
+                    <div class="status-value">{{ Math.round(value) }}/{{ maxStatus[key] }}</div>
+                </div>
+            </div>
+
+            <!-- 婴儿显示区域 -->
+            <div class="baby-container">
+                <!-- 婴儿状态指示 -->
+                <div class="baby-state">
+                    <i :class="getStateIcon(babyState)"></i>{{ babyState }}
+                </div>
+
+                <!-- 婴儿表情 -->
+                <div class="baby-emoji">
+                    {{ babyEmoji }}
+                </div>
+
+                <!-- 时间显示 -->
+                <div class="time-display">
+                    第{{ day }}天 {{ formattedTime }}
+                </div>
+
+                <!-- 3D婴儿模型容器 -->
+                <div id="baby-canvas-container" class="w-full h-full relative">
+                    <canvas id="baby-canvas"></canvas>
+                </div>
+
+                <!-- 交互提示 -->
+                <div v-if="currentEvent" class="absolute top-0 left-0 right-0 text-center text-sm text-red-600 blink">
+                    {{ currentEvent }}
+                </div>
+
+                <!-- 动作反馈 -->
+                <div v-if="actionFeedback" class="absolute bottom-2 left-0 right-0 text-center text-sm"
+                     :class="actionFeedbackClass">
+                    {{ actionFeedback }}
+                </div>
+
+                <div v-for="(feedback, index) in effectFeedbacks" :key="index"
+                     class="effect-feedback"
+                     :class="feedback.class"
+                     :style="{
+            top: `calc(40% + ${feedback.offsetY}px)`,
+            left: `calc(50% + ${feedback.offsetX}px)`,
+            animation: feedback.animation + ' 1.5s forwards'
+        }">
+                    {{ feedback.text }}
+                </div>
+            </div>
+
+            <!-- 状态总览面板（仅展示天数/阶段/体重/先天种族/成长倾向） -->
+            <div v-if="currentView === 'status'" class="status-panel m-2">
+                <div class="status-row"><span class="status-label">天数:</span><span>{{ day }}</span></div>
+                <div class="status-row"><span class="status-label">阶段:</span><span>{{ ageDisplay }}</span></div>
+                <div class="status-row"><span class="status-label">体重:</span><span>{{ Math.round(weight / 1000) }} kg</span></div>
+                <div class="status-row"><span class="status-label">成长倾向:</span><span>{{ growthTendency.label }}</span></div>
+                <div class="status-row"><span class="status-label">德:</span>
+                    <span class="flex-1 ml-2 status-bar"><span class="status-fill" :style="{width: getRacePct(race.morality), background:'#78C850'}"></span></span>
+                    <span class="ml-2">{{ race.morality }}</span>
+                </div>
+                <div class="status-row"><span class="status-label">智:</span>
+                    <span class="flex-1 ml-2 status-bar"><span class="status-fill" :style="{width: getRacePct(race.intelligence), background:'#6890F0'}"></span></span>
+                    <span class="ml-2">{{ race.intelligence }}</span>
+                </div>
+                <div class="status-row"><span class="status-label">体:</span>
+                    <span class="flex-1 ml-2 status-bar"><span class="status-fill" :style="{width: getRacePct(race.physical), background:'#F08030'}"></span></span>
+                    <span class="ml-2">{{ race.physical }}</span>
+                </div>
+                <div class="status-row"><span class="status-label">美:</span>
+                    <span class="flex-1 ml-2 status-bar"><span class="status-fill" :style="{width: getRacePct(race.aesthetics), background:'#F85888'}"></span></span>
+                    <span class="ml-2">{{ race.aesthetics }}</span>
+                </div>
+                <div class="status-row"><span class="status-label">劳:</span>
+                    <span class="flex-1 ml-2 status-bar"><span class="status-fill" :style="{width: getRacePct(race.labor), background:'#A8B820'}"></span></span>
+                    <span class="ml-2">{{ race.labor }}</span>
+                </div>
+                <div class="status-row"><span class="status-label">想象力:</span>
+                    <span class="flex-1 ml-2 status-bar"><span class="status-fill" :style="{width: getRacePct(race.imagination), background:'#7038F8'}"></span></span>
+                    <span class="ml-2">{{ race.imagination }}</span>
+                </div>
+            </div>
+
+            <!-- 子选项面板 -->
+            <div v-if="currentView === 'submenu'" class="submenu m-2">
+                <div class="submenu-title">{{ currentSubmenuTitle }}</div>
+                <div class="submenu-options">
+                    <div v-for="(option, index) in currentSubmenuOptions" :key="index"
+                         class="submenu-option" :class="{ selected: selectedSubmenuIndex === index }"
+                         @click="selectSubmenuOption(index)">
+                        {{ option.label }}
+                    </div>
+                </div>
+            </div>
+
+            <!-- 消息历史 -->
+            <div v-if="currentView === 'main'" class="message-history m-2">
+                <div v-for="(msg, index) in messageHistory" :key="index" class="message-item">
+                    <span class="message-time">{{ msg.time }}</span>{{ msg.text }}
+                </div>
+            </div>
+
+            <!-- 动作图标栏 -->
+            <div v-if="currentView === 'main'" class="flex justify-between mt-2 px-4 pb-2">
+                <div v-for="(action, index) in actions" :key="action.name"
+                     class="flex flex-col items-center">
+                    <div class="action-icon" :class="{ selected: selectedActionIndex === index }"
+                         :title="action.label">
+                        <i :class="action.icon"></i>
+                    </div>
+                    <div class="icon-title">{{ action.label }}</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 控制按钮 -->
+        <div class="controls-container">
+            <div class="text-center">
+                <div class="button button-nav" @click="navigate">▶</div>
+                <div class="text-xs text-white mt-1">选择</div>
+            </div>
+
+            <div class="text-center relative">
+                <div class="button button-action" @click="performAction">
+                    <div v-if="isCoolingDown" class="cooldown-overlay">
+                        <div class="cooldown-spinner"></div>
+                        <span style="font-size: 10px">{{ cooldownTime }}</span>
+                    </div>
+                    ✓
+                </div>
+                <div class="text-xs text-white mt-1">确认</div>
+            </div>
+
+            <div class="text-center">
+                <div class="button button-back" @click="cancelAction">✗</div>
+                <div class="text-xs text-white mt-1">取消</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 游戏信息 -->
+    <div class="mt-4 text-white text-center">
+        <p class="text-sm mb-2">第{{ day }}天 - 宝宝健康: {{ Math.round(status.health) }}/{{ maxStatus.health }}</p>
+        <p class="text-xs mb-2">游戏时间: 1秒 = 10分钟 | 使用选择键选择，确认键执行</p>
+        <button @click="resetGame" class="bg-blue-600 px-4 py-2 rounded hover:bg-blue-700 text-xs">重置游戏</button>
+    </div>
+</div>
+
+<script>
+    const {createApp, ref, computed, onMounted, onUnmounted} = Vue;
+
+    createApp({
+        setup() {
+            // 状态最大值（随天数增加）
+            const maxStatus = ref({
+                satiation: 100,
+                energy: 100,
+                health: 100,
+                hygiene: 100,
+                happiness: 100
+            });
+
+            // 游戏状态
+            const status = ref({
+                satiation: 80,
+                energy: 70,
+                health: 90,
+                hygiene: 85,
+                happiness: 75
+            });
+
+            // 游戏变量
+            const gameTime = ref(0);
+            const sleepDuration = ref(0);
+            const day = ref(1);
+            const hour = ref(8);
+            const minute = ref(0);
+            const weight = ref(3200);
+            const isSleeping = ref(false);
+            const isCrying = ref(false);
+            const hasPooped = ref(false);
+            const currentEvent = ref(null);
+            const actionFeedback = ref(null);
+            const actionFeedbackClass = ref('');
+            const effectFeedbacks = ref([]);
+            const gameInterval = ref(null);
+            const selectedActionIndex = ref(0);
+            const messageHistory = ref([]);
+            const currentView = ref('main');
+            const currentSubmenuTitle = ref('');
+            const currentSubmenuOptions = ref([]);
+            const selectedSubmenuIndex = ref(0);
+            // 成长系统（德智体美劳）
+            const growth = ref({
+                morality: 0,
+                intelligence: 0,
+                physical: 0,
+                aesthetics: 0,
+                labor: 0
+            });
+            // 成长加成开关（默认关闭，保持平衡）
+            const enableGrowthBonuses = ref(false);
+            const growthTendency = computed(() => {
+                const entries = Object.entries(growth.value);
+                if (!entries.length) return { key: '-', label: '无' };
+                const [key] = entries.reduce((a, b) => (a[1] >= b[1] ? a : b));
+                const map = { morality: '德', intelligence: '智', physical: '体', aesthetics: '美', labor: '劳' };
+                return { key, label: map[key] || key };
+            });
+            // 心情系统：由快乐度映射
+            const mood = ref('neutral'); // happy | neutral | sad
+            const updateMood = () => {
+                const happinessPct = status.value.happiness / maxStatus.value.happiness;
+                if (happinessPct >= 0.8) mood.value = 'happy';
+                else if (happinessPct <= 0.3) mood.value = 'sad';
+                else mood.value = 'neutral';
+            };
+            // 种族值系统（德智体美劳 + 想象力），初始总和≈500
+            const race = ref({ morality: 0, intelligence: 0, physical: 0, aesthetics: 0, labor: 0, imagination: 0 });
+            const initRace = () => {
+                const keys = Object.keys(race.value);
+                const parts = Array(keys.length).fill(0).map(() => Math.random());
+                const sum = parts.reduce((a, b) => a + b, 0);
+                let remaining = 500;
+                keys.forEach((k, i) => {
+                    const v = i === keys.length - 1 ? remaining : Math.max(40, Math.round((parts[i] / sum) * 500));
+                    race.value[k] = v;
+                    remaining -= v;
+                });
+            };
+            // 行为历史计数，用于升级演化
+            const actionHistory = ref({ feed: 0, clean: 0, play: 0, sleep: 0, doctor: 0 });
+            // 事件系统：从配置读取（响应式、便于外部加载覆盖）
+            const eventsConfig = ref(JSON.parse(document.getElementById('events-config').textContent));
+            const activeEvents = ref([]); // { id, expiresAtMinute }
+
+            const gameOver = ref(false);
+            const deathReason = ref('');
+            const isCoolingDown = ref(false);
+            const cooldownTime = ref(0);
+            const cooldownInterval = ref(null);
+            // 出生弹窗
+            const showBirthModal = ref(true);
+// 计算游戏时间（分钟）
+            const playTime = computed(() => {
+                return Math.floor(gameTime.value / 1000 * 10);
+            });
+            // 所有可能的动作选项（从内嵌配置读取，允许外部加载覆盖）
+            const allActions = ref(JSON.parse(document.getElementById('actions-config').textContent));
+
+            // 可用动作
+            const actions = ref([
+                {name: 'feed', icon: 'fas fa-utensils', label: '喂食', submenu: '选择食物'},
+                {name: 'clean', icon: 'fas fa-bath', label: '清洁', submenu: '清洁方式'},
+                {name: 'play', icon: 'fas fa-gamepad', label: '游戏', submenu: '游戏方式'},
+                {name: 'sleep', icon: 'fas fa-moon', label: '睡觉', submenu: '哄睡方式'},
+                {name: 'doctor', icon: 'fas fa-heart-pulse', label: '医疗', submenu: '医疗方式'},
+                {name: 'status', icon: 'fas fa-chart-simple', label: '状态', submenu: null}
+            ]);
+
+            // 计算属性
+            const ageDisplay = computed(() => {
+                if (day.value < 3) return '新生儿';
+                if (day.value < 7) return '婴儿';
+                return '幼儿';
+            });
+
+            const formattedTime = computed(() => {
+                return `${hour.value.toString().padStart(2, '0')}:${minute.value.toString().padStart(2, '0')}`;
+            });
+
+            const babyState = computed(() => {
+                if (isSleeping.value) return '睡觉中';
+                if (isCrying.value) return '哭闹中';
+                if (hasPooped.value) return '便便了';
+                if (status.value.satiation < maxStatus.value.satiation * 0.2) return '饿了';
+                if (status.value.energy < maxStatus.value.energy * 0.2) return '困倦';
+                if (status.value.hygiene < maxStatus.value.hygiene * 0.2) return '脏了';
+                if (status.value.health < maxStatus.value.health * 0.5) return '生病了';
+                if (status.value.happiness > maxStatus.value.happiness * 0.8) return '开心';
+                return '正常';
+            });
+
+            // 更新后的babyEmoji计算逻辑
+            const babyEmoji = computed(() => {
+                if (gameOver.value) return '😭';
+                if (isSleeping.value) return '😴';
+                if (isCrying.value) return '😭';
+                if (hasPooped.value) return '💩';
+                if (status.value.satiation < maxStatus.value.satiation * 0.2) return '😫';
+                if (status.value.energy < maxStatus.value.energy * 0.3) return '😪';
+                if (status.value.hygiene < maxStatus.value.hygiene * 0.3) return '🤢';
+                if (status.value.health < maxStatus.value.health * 0.7) return '🤒';
+                if (status.value.health < maxStatus.value.health * 0.4) return '🤕';
+                if (status.value.happiness < maxStatus.value.happiness * 0.4) return '😟';
+                if (status.value.happiness > maxStatus.value.happiness * 0.8) return '😊';
+                return '👶';
+            });
+
+            // 状态颜色
+            const getStatusColor = (value, maxValue) => {
+                const percentage = (value / maxValue) * 100;
+                if (percentage > 80) return 'bg-green-500';
+                if (percentage > 50) return 'bg-yellow-500'; // 降低阈值
+                if (percentage > 30) return 'bg-orange-500'; // 添加中间级别
+                return 'bg-red-500';
+            };
+
+            // 状态名称
+            const getStatusName = (key) => {
+                const names = {
+                    satiation: '饱腹',
+                    energy: '精力',
+                    health: '健康',
+                    hygiene: '卫生',
+                    happiness: '快乐'
+                };
+                return names[key] || key;
+            };
+
+            // 状态图标
+            const getStateIcon = (state) => {
+                const icons = {
+                    '睡觉中': 'fas fa-bed',
+                    '哭闹中': 'fas fa-tired',
+                    '便便了': 'fas fa-poop',
+                    '饿了': 'fas fa-utensils',
+                    '困倦': 'fas fa-moon',
+                    '脏了': 'fas fa-shower',
+                    '生病了': 'fas fa-thermometer-half',
+                    '开心': 'fas fa-laugh',
+                    '正常': 'fas fa-smile'
+                };
+                return icons[state] || 'fas fa-baby';
+            };
+
+            // 事件修正查询
+            const getActionSuccessModifier = (actionName) => {
+                let delta = 0;
+                for (const e of activeEvents.value) {
+                    const def = eventsConfig.value.events.find(ev => ev.id === e.id);
+                    if (def && def.modifiers && def.modifiers.actionSuccess && def.modifiers.actionSuccess[actionName]) {
+                        delta += def.modifiers.actionSuccess[actionName];
+                    }
+                }
+                // 成长被动：按倾向对部分动作提供小幅成功率加成
+                if (enableGrowthBonuses.value) {
+                    const key = growthTendency.value.key;
+                    if (key === 'intelligence' && actionName === 'play') delta += 0.05;
+                    if (key === 'morality' && (actionName === 'clean' || actionName === 'doctor')) delta += 0.05;
+                    if (key === 'physical' && actionName === 'play') delta += 0.03;
+                }
+                return delta;
+            };
+
+            const getRacePct = (v) => {
+                const val = Math.max(0, Math.min(252, Number(v || 0)));
+                return (val / 255 * 100).toFixed(0) + '%';
+            };
+            const closeBirthModal = () => { showBirthModal.value = false; };
+
+            const getRaceAffinityMultiplier = (actionName, option) => {
+                const affinity = option.affinity || {};
+                let score = 0;
+                for (const [trait, weight] of Object.entries(affinity)) {
+                    const traitVal = race.value[trait] || 0;
+                    score += weight * (traitVal / 100);
+                }
+                const imagination = (race.value.imagination || 0) / 500;
+                const volatility = 1 + imagination * 0.05;
+                return Math.max(0.8, Math.min(1.0 + score * 0.05, 1.3)) * volatility;
+            };
+
+            const getActionEffectMultiplier = (actionName, statKey, option) => {
+                let mult = 1.0;
+                for (const e of activeEvents.value) {
+                    const def = eventsConfig.value.events.find(ev => ev.id === e.id);
+                    const key = `${actionName}.${statKey}`;
+                    if (def && def.modifiers && def.modifiers.actionEffectMultiplier && def.modifiers.actionEffectMultiplier[key]) {
+                        mult *= def.modifiers.actionEffectMultiplier[key];
+                    }
+                }
+                // 成长被动：美偏好提升玩耍带来的快乐收益
+                if (enableGrowthBonuses.value) {
+                    if (growthTendency.value.key === 'aesthetics' && actionName === 'play' && statKey === 'happiness') {
+                        mult *= 1.05;
+                    }
+                }
+                // 心情修正：按技能配置的 moodMultipliers
+                if (option && option.moodMultipliers) {
+                    const m = option.moodMultipliers[mood.value];
+                    if (m) mult *= m;
+                }
+                // 种族亲和度
+                mult *= getRaceAffinityMultiplier(actionName, option || {});
+                return mult;
+            };
+
+            // 添加消息到历史
+            const addMessage = (text) => {
+                const time = formattedTime.value;
+                messageHistory.value.unshift({time, text});
+                if (messageHistory.value.length > 10) {
+                    messageHistory.value.pop();
+                }
+            };
+
+            // 添加效果反馈 - 修复重叠问题
+            const addEffectFeedback = (text, type) => {
+                // 生成随机位置偏移
+                const offsetX = Math.floor(Math.random() * 61) - 30; // -30到30
+                const offsetY = Math.floor(Math.random() * 41) - 20; // 增加Y轴偏移，避免重叠
+
+                // 生成随机动画方向 (1-3)
+                const animationType = Math.floor(Math.random() * 3) + 1;
+
+                // 将新反馈加入队列
+                effectFeedbacks.value.push({
+                    text,
+                    class: type,
+                    offsetX,
+                    offsetY,
+                    animation: `fadeOut${animationType}`
+                });
+
+                // 如果没有正在显示的反馈，则开始显示队列中的第一个反馈
+                if (effectFeedbacks.value.length === 1) {
+                    showNextFeedback();
+                }
+            };
+
+            // 显示队列中的下一个反馈
+            const showNextFeedback = () => {
+                if (effectFeedbacks.value.length > 0) {
+                    // 当前显示第一个反馈，设置一个定时器，1500毫秒后移除并显示下一个
+                    setTimeout(() => {
+                        effectFeedbacks.value.shift(); // 移除当前显示的反馈
+                        showNextFeedback(); // 显示下一个
+                    }, 1000);
+                }
+            };
+
+
+            // 导航控制
+            const navigate = () => {
+                if (currentView.value === 'submenu') {
+                    selectedSubmenuIndex.value = (selectedSubmenuIndex.value + 1) % currentSubmenuOptions.value.length;
+                } else if (currentView.value === 'main') {
+                    selectedActionIndex.value = (selectedActionIndex.value + 1) % actions.value.length;
+                }
+            };
+
+            // 取消操作
+            const cancelAction = () => {
+                if (isCoolingDown.value) return;
+
+                if (currentView.value === 'submenu') {
+                    currentView.value = 'main';
+                    actionFeedback.value = '操作已取消';
+                    actionFeedbackClass.value = 'text-yellow-600';
+
+                    setTimeout(() => {
+                        actionFeedback.value = null;
+                    }, 2000);
+                } else if (currentView.value === 'status') {
+                    currentView.value = 'main';
+                } else {
+                    currentEvent.value = null;
+                }
+            };
+
+            // 选择子菜单选项
+            const selectSubmenuOption = (index) => {
+                if (isCoolingDown.value) return;
+                selectedSubmenuIndex.value = index;
+            };
+
+            // 开始冷却
+            const startCooldown = () => {
+                if (isCoolingDown.value) return;
+
+                isCoolingDown.value = true;
+                cooldownTime.value = 3; // 缩短冷却时间
+
+                cooldownInterval.value = setInterval(() => {
+                    cooldownTime.value--;
+
+                    if (cooldownTime.value <= 0) {
+                        clearInterval(cooldownInterval.value);
+                        isCoolingDown.value = false;
+                    }
+                }, 1000);
+            };
+
+            // 执行动作
+            const performAction = () => {
+                if (gameOver.value || isCoolingDown.value) return;
+
+
+                if (currentView.value === 'submenu') {
+                    // 开始冷却
+                    startCooldown();
+                    const action = actions.value[selectedActionIndex.value];
+                    const option = currentSubmenuOptions.value[selectedSubmenuIndex.value];
+
+                    // 检查宝宝是否睡着了
+                    if (option.requireAwake && isSleeping.value) {
+                        actionFeedback.value = '宝宝睡着了，无法操作！';
+                        actionFeedbackClass.value = 'text-red-600';
+                        currentView.value = 'main';
+                        addEffectFeedback('MISS', 'feedback-miss');
+                        return;
+                    }
+
+                    // 成功率计算（基础=技能accuracy或0.8 + 修正）
+                    let baseAcc = typeof option.accuracy === 'number' ? option.accuracy : 0.8;
+                    let successRate = baseAcc + getActionSuccessModifier(action.name);
+                    successRate = Math.max(0.1, Math.min(0.95, successRate));
+                    const isSuccess = Math.random() < successRate;
+                    let effectMultiplier = isSuccess ? 1.0 : 0.5;
+                    // surge/slump（“异常”与“低迷”，不叫暴击）
+                    if (isSuccess) {
+                        const surgeRate = option.surgeRate || 0.0;
+                        const slumpRate = option.slumpRate || 0.0;
+                        const roll = Math.random();
+                        if (roll < surgeRate) effectMultiplier *= 1.5;
+                        else if (roll > 1 - slumpRate) effectMultiplier *= 0.5;
+                    }
+                    let resultMessage = option.message;
+
+                    if (!isSuccess) {
+                        resultMessage += '（失败，效果减半）';
+                        addEffectFeedback('MISS', 'feedback-miss');
+                    }
+
+                    // 特殊处理：换尿布操作清除便便
+                    if (option.poopClean && hasPooped.value) {
+                        hasPooped.value = false;
+                    }
+
+                    // 应用效果并创建反馈（事件修正：配置化倍率）
+                    for (const [key, value] of Object.entries(option.effect)) {
+                        let effectValue = value * effectMultiplier * getActionEffectMultiplier(action.name, key, option);
+                        const roundedValue = Math.round(effectValue);
+
+                        if (effectValue > 0) {
+                            addEffectFeedback(`+${roundedValue} ${getStatusName(key)}`, 'feedback-positive');
+                        } else if (effectValue < 0) {
+                            addEffectFeedback(`${roundedValue} ${getStatusName(key)}`, 'feedback-negative');
+                        }
+
+                        status.value[key] = Math.max(0, Math.min(maxStatus.value[key], status.value[key] + effectValue));
+                    }
+
+                    // 累计成长点（若配置提供growth）
+                    if (option.growth) {
+                        for (const [gk, gv] of Object.entries(option.growth)) {
+                            if (growth.value[gk] !== undefined) {
+                                growth.value[gk] += gv;
+                            }
+                        }
+                    }
+
+                    // 添加消息
+                    addMessage(resultMessage);
+
+                    // 特殊处理：哄睡操作
+                    if (action.name === 'sleep') {
+                        // 睡眠成功率
+                        const sleepSuccessRate = status.value.energy < maxStatus.value.energy * 0.6 ? 0.9 : 0.5;
+                        if (Math.random() < sleepSuccessRate) {
+                            isSleeping.value = true;
+                            addMessage('宝宝睡着了');
+                        } else {
+                            addMessage('宝宝不想睡觉');
+                        }
+                    } else if (action.name === 'status') {
+                        currentView.value = 'status';
+                    }
+                    // 玩耍动作有50%几率唤醒宝宝
+                    if (Math.random() < 0.5) {
+                        isSleeping.value = false;
+                        sleepDuration.value = 0;
+                        addMessage('玩耍惊醒了宝宝!');
+                        addEffectFeedback('惊醒!', 'feedback-negative');
+                    }
+                    // 行为历史计数
+                    if (actionHistory.value[action.name] !== undefined) {
+                        actionHistory.value[action.name]++;
+                    }
+                    // 更新心情派生
+                    updateMood();
+                    // 返回主视图
+                    currentView.value = 'main';
+                    actionFeedback.value = resultMessage;
+                    actionFeedbackClass.value = isSuccess ? 'text-green-600' : 'text-yellow-600';
+                } else if (currentView.value === 'main') {
+                    const action = actions.value[selectedActionIndex.value];
+                    if (action.name === 'status') {
+                        currentView.value = 'status';
+                    } else {
+                        currentSubmenuTitle.value = action.submenu;
+
+                        // 从所有选项中随机选择4个
+                        const allOptions = [...allActions.value[action.name]];
+                        const shuffled = allOptions.sort(() => 0.5 - Math.random());
+                        currentSubmenuOptions.value = shuffled.slice(0, 4);
+
+                        selectedSubmenuIndex.value = 0;
+                        currentView.value = 'submenu';
+                    }
+
+                }
+
+                setTimeout(() => {
+                    actionFeedback.value = null;
+                }, 3000);
+            };
+
+            // 检查游戏失败条件
+            const checkGameOver = () => {
+                if (status.value.satiation <= 0) {
+                    gameOver.value = true;
+                    deathReason.value = "没有照顾好宝宝的饮食！";
+                    return true;
+                }
+
+                if (status.value.energy <= 0) {
+                    gameOver.value = true;
+                    deathReason.value = "没有让宝宝得到充分休息！";
+                    return true;
+                }
+
+                if (status.value.health <= 0) {
+                    gameOver.value = true;
+                    deathReason.value = "没有及时照顾宝宝的健康！";
+                    return true;
+                }
+
+                if (status.value.hygiene <= 0) {
+                    gameOver.value = true;
+                    deathReason.value = "没有保持宝宝清洁卫生！";
+                    return true;
+                }
+
+                if (status.value.happiness <= 0) {
+                    gameOver.value = true;
+                    deathReason.value = "没有关注宝宝的情绪需求！";
+                    return true;
+                }
+
+                return false;
+            };
+
+            // 更新最大状态值（随天数增加）
+            const updateMaxStatus = () => {
+                const growthFactor = 1 + (day.value - 1) * 0.05; // 每天增长5%
+                for (const key in maxStatus.value) {
+                    maxStatus.value[key] = Math.min(200, Math.round(100 * growthFactor));
+                }
+            };
+
+            // 每小时状态变化
+            const hourlyUpdate = () => {
+                // 根据时间影响状态
+                if (hour.value >= 22 || hour.value < 6) {
+                    // 夜间：睡觉恢复精力
+                    if (isSleeping.value) {
+                        status.value.energy = Math.min(maxStatus.value.energy, status.value.energy + 15);
+                        // 晚上，精力消耗增加
+                        status.value.energy = Math.max(0, status.value.energy - 15);
+                        if (status.value.energy < maxStatus.value.energy * 0.3 && !isSleeping.value) {
+                            currentEvent.value = '想睡觉';
+                        }
+                    } else if (hour.value >= 6 && hour.value < 12) {
+                        // 早上，饱腹度下降
+                        status.value.satiation = Math.max(0, status.value.satiation - 20);
+                        if (status.value.satiation < maxStatus.value.satiation * 0.3) {
+                            currentEvent.value = '饿了';
+                        }
+                    } else {
+                        // 下午，一般需求
+                        status.value.satiation = Math.max(0, status.value.satiation - 12);
+                        status.value.energy = Math.max(0, status.value.energy - 8);
+                        status.value.hygiene = Math.max(0, status.value.hygiene - 10);
+                    }
+// 强化健康/快乐值衰减
+                    const healthDecay = 1 + (100 - status.value.hygiene) / 100;
+                    const happinessDecay = 0.8 + (100 - Math.min(
+                        status.value.satiation,
+                        status.value.energy,
+                        status.value.health
+                    )) / 100;
+                    status.value.health = Math.max(0, status.value.health - healthDecay);
+                    status.value.happiness = Math.max(0, status.value.happiness - happinessDecay);
+                    // 增加健康下降机制（如果不及时照顾）
+                    if (status.value.hygiene < 30 || status.value.satiation < 30) {
+                        status.value.health -= 8;
+                    }
+                    // 增加体重变化逻辑
+                    weight.value += isSleeping.value ? 5 : 2;
+                    // 配置化事件：按小时检定触发
+                    for (const ev of eventsConfig.value.events) {
+                        const chance = ev.trigger && ev.trigger.chanceHourly ? ev.trigger.chanceHourly : 0;
+                        // 简单条件：醒着/任一阈值
+                        const whenAwake = ev.trigger && ev.trigger.whenAwake ? !isSleeping.value : true;
+                        let thresholdOk = true;
+                        if (ev.trigger && ev.trigger.anyBelow) {
+                            thresholdOk = Object.entries(ev.trigger.anyBelow).some(([k, v]) => status.value[k] < v);
+                        }
+                        if (Math.random() < chance && whenAwake && thresholdOk) {
+                            // 激活事件
+                            const expiresAt = day.value * 24 * 60 + hour.value * 60 + minute.value + (ev.durationMinutes || 60);
+                            activeEvents.value.push({ id: ev.id, expiresAtMinute: expiresAt });
+                            addMessage(`发生事件：${ev.label || ev.id}`);
+                            if (ev.flags && ev.flags.hasPooped) hasPooped.value = true;
+                            if (ev.flags && ev.flags.isCrying) isCrying.value = true;
+                        }
+                    }
+
+                    // 根据状态设置婴儿表情
+                    isCrying.value = status.value.happiness < maxStatus.value.happiness * 0.2 ||
+                        status.value.health < maxStatus.value.health * 0.3 ||
+                        hasPooped.value;
+
+                    // 自动醒来
+                    if (hour.value === 6 && isSleeping.value) {
+                        isSleeping.value = false;
+                        addMessage('宝宝自然醒了');
+                    }
+
+                    // 精力值满了自动醒来
+                    if (isSleeping.value && status.value.energy >= maxStatus.value.energy) {
+                        isSleeping.value = false;
+                        addMessage('宝宝睡饱了');
+                    }
+                    // 增加哭泣触发条件
+
+                    if (!isSleeping.value && Math.random() < 0.4 && (
+                        status.value.satiation < 30 ||
+                        status.value.energy < 30 ||
+                        status.value.happiness < 40
+                    )) {
+                        isCrying.value = true;
+                        addMessage('宝宝哭闹了！');
+                    } else if (isCrying.value) {
+                        // 保持由事件控制，非事件时逐步恢复
+                        if (!activeEvents.value.find(e => e.id === 'crying')) {
+                            isCrying.value = false;
+                        }
+                    }
+                    // 睡觉时太饿了会饿醒
+                    if (isSleeping.value && status.value.satiation < maxStatus.value.satiation * 0.2) {
+                        isSleeping.value = false;
+                        isCrying.value = true;
+                        currentEvent.value = '饿醒了';
+                        addMessage('宝宝饿醒了');
+                    }
+                    // 每日体重增加
+                    if (hour.value === 0) {
+                        const weightGain = 80 + Math.random() * 40;
+                        weight.value += weightGain;
+                        addMessage(`宝宝长大了！体重增加${Math.round(weightGain / 1000, 2)}kg`);
+                    }
+                }
+            };
+
+
+            // 游戏主循环
+            const gameLoop = () => {
+                if (gameOver.value) return;
+
+                // 时间流逝（1秒 = 游戏内10分钟）
+                gameTime.value += 10;
+                minute.value += 10;
+
+                if (minute.value >= 60) {
+                    minute.value = 0;
+                    hour.value += 1;
+
+                    if (hour.value >= 24) {
+                        hour.value = 0;
+                        day.value += 1;
+                        updateMaxStatus(); // 更新最大状态值
+                        addMessage(`第${day.value}天开始了！宝宝成长了！`);
+                        // 每日升级：根据历史行为偏好，微调种族值（向相关维度+）
+                        const inc = 5; // 每日总加成预算
+                        const order = Object.entries(actionHistory.value).sort((a,b)=>b[1]-a[1]).map(x=>x[0]);
+                        for (const act of order) {
+                            if (act === 'play') race.value.intelligence += inc;
+                            if (act === 'feed') race.value.physical += inc;
+                            if (act === 'clean') race.value.morality += inc;
+                            if (act === 'doctor') race.value.morality += inc;
+                            if (act === 'sleep') race.value.physical += inc;
+                            break; // 仅按最偏好加一次
+                        }
+                        // 清空历史
+                        actionHistory.value = { feed: 0, clean: 0, play: 0, sleep: 0, doctor: 0 };
+                    }
+
+                    // 每小时更新状态
+                    hourlyUpdate();
+                }
+
+                // 状态自然下降
+                status.value.satiation = Math.max(0, status.value.satiation - 0.25);
+
+                // 如果宝宝醒着，精力值才会下降
+                if (!isSleeping.value) {
+                    status.value.energy = Math.max(0, status.value.energy - 0.15);
+                } else {
+                    // 睡觉时恢复精力
+                    status.value.energy = Math.min(maxStatus.value.energy, status.value.energy + 10);
+                }
+
+                status.value.hygiene = Math.max(0, status.value.hygiene - 0.2);
+
+                // 健康值计算公式（基于清洁值、饱腹值和精力值）
+                const healthModifier =
+                    (status.value.hygiene / maxStatus.value.hygiene * 0.4) +
+                    (status.value.satiation / maxStatus.value.satiation * 0.3) +
+                    (status.value.energy / maxStatus.value.energy * 0.3);
+
+                if (healthModifier < 0.6) {
+                    status.value.health = Math.max(0, status.value.health - 0.5);
+                } else {
+                    status.value.health = Math.min(maxStatus.value.health, status.value.health + 0.25);
+                }
+
+                // 快乐度受其他状态影响
+                let happinessModifier = 0.1; // 自然恢复
+                if (status.value.satiation < maxStatus.value.satiation * 0.3) happinessModifier -= 0.5;
+                if (status.value.energy < maxStatus.value.energy * 0.2) happinessModifier -= 0.5;
+                if (status.value.hygiene < maxStatus.value.hygiene * 0.2) happinessModifier -= 0.5;
+                if (status.value.health < maxStatus.value.health * 0.5) happinessModifier -= 0.75;
+                if (hasPooped.value) happinessModifier -= 1.0;
+
+                status.value.happiness = Math.max(0, Math.min(maxStatus.value.happiness, status.value.happiness + happinessModifier));
+
+                // 体重增加
+                if (status.value.satiation > maxStatus.value.satiation * 0.7) {
+                    weight.value += 1;
+                }
+
+                    // 清理过期事件（按分钟绝对时间）
+                    const currentMinuteAbs = day.value * 24 * 60 + hour.value * 60 + minute.value;
+                    const beforeCount = activeEvents.value.length;
+                    activeEvents.value = activeEvents.value.filter(e => e.expiresAtMinute > currentMinuteAbs);
+                    if (activeEvents.value.length < beforeCount) {
+                        // 根据 flags 恢复状态
+                        if (!activeEvents.value.find(e => e.id === 'pooped')) hasPooped.value = false;
+                        if (!activeEvents.value.find(e => e.id === 'crying')) isCrying.value = false;
+                    }
+
+                // 检查游戏失败条件（即刻判定）
+                checkGameOver();
+                if (!gameOver.value) {
+                    if (status.value.satiation <= 0 || status.value.energy <= 0 || status.value.health <= 0 || status.value.hygiene <= 0 || status.value.happiness <= 0) {
+                        checkGameOver();
+                    }
+                }
+            };
+
+            // 重置游戏
+            const resetGame = () => {
+                maxStatus.value = {
+                    satiation: 100,
+                    energy: 100,
+                    health: 100,
+                    hygiene: 100,
+                    happiness: 100
+                };
+
+                status.value = {
+                    satiation: 80,
+                    energy: 70,
+                    health: 90,
+                    hygiene: 85,
+                    happiness: 75
+                };
+
+                gameTime.value = 0;
+                day.value = 1;
+                hour.value = 8;
+                minute.value = 0;
+                weight.value = 3200;
+                isSleeping.value = false;
+                isCrying.value = false;
+                hasPooped.value = false;
+                currentEvent.value = null;
+                actionFeedback.value = null;
+                effectFeedbacks.value = [];
+                selectedActionIndex.value = 0;
+                messageHistory.value = [];
+                currentView.value = 'main';
+                gameOver.value = false;
+                deathReason.value = '';
+                isCoolingDown.value = false;
+                cooldownTime.value = 0;
+
+                if (cooldownInterval.value) {
+                    clearInterval(cooldownInterval.value);
+                }
+            };
+            // 每分钟状态更新（轻量级）
+            const minuteUpdate = () => {
+                // 随时间缓慢恢复健康（如果基本需求满足）
+                if (
+                    status.value.satiation > 70 &&
+                    status.value.energy > 60 &&
+                    status.value.hygiene > 75
+                ) {
+                    status.value.health = Math.min(
+                        maxStatus.value.health,
+                        status.value.health + 0.2
+                    );
+                }
+                updateMood();
+            };
+            onMounted(async () => {
+                initRace();
+                // 外部配置加载（失败则使用内嵌）
+                try {
+                    const resA = await fetch('config/actions.json');
+                    if (resA.ok) {
+                        allActions.value = await resA.json();
+                    }
+                } catch (e) { /* ignore and fallback */ }
+                try {
+                    const resE = await fetch('config/events.json');
+                    if (resE.ok) {
+                        eventsConfig.value = await resE.json();
+                    }
+                } catch (e) { /* ignore and fallback */ }
+                gameInterval.value = setInterval(() => {
+                    // 每600ms = 游戏内10分钟
+                    gameTime.value += 600;
+                    minute.value += 10;
+
+                    if (minute.value >= 60) {
+                        minute.value = 0;
+                        hour.value += 1;
+
+                        if (hour.value >= 24) {
+                            hour.value = 0;
+                            day.value += 1;
+                            updateMaxStatus();
+                        }
+
+                        // 每小时事件
+                        hourlyUpdate();
+                    }
+
+                    // 每分钟更新
+                    minuteUpdate();
+
+                }, 600); // 每0.6秒
+                resetGame();
+            });
+
+            onUnmounted(() => {
+                if (gameInterval.value) {
+                    clearInterval(gameInterval.value);
+                }
+                if (cooldownInterval.value) {
+                    clearInterval(cooldownInterval.value);
+                }
+            });
+
+            return {
+                maxStatus,
+                status,
+                gameTime,
+                day,
+                hour,
+                minute,
+                weight,
+                isSleeping,
+                isCrying,
+                hasPooped,
+                currentEvent,
+                actionFeedback,
+                effectFeedbacks,
+                actionFeedbackClass,
+                selectedActionIndex,
+                messageHistory,
+                currentView,
+                currentSubmenuTitle,
+                currentSubmenuOptions,
+                selectedSubmenuIndex,
+                gameOver,
+                deathReason,
+                actions,
+                ageDisplay,
+                formattedTime,
+                babyState,
+                babyEmoji,
+                isCoolingDown,
+                cooldownTime,
+                getStatusColor,
+                getStatusName,
+                getStateIcon,
+                growth,
+                growthTendency,
+                enableGrowthBonuses,
+                mood,
+                race,
+                showBirthModal,
+                getRacePct,
+                closeBirthModal,
+                navigate,
+                cancelAction,
+                selectSubmenuOption,
+                performAction,
+                resetGame
+            };
+        }
+    }).mount('#app');
+</script>
+</body>
+</html>

@@ -1,0 +1,28 @@
+{
+  "events": [
+    {
+      "id": "crying",
+      "label": "哭闹",
+      "trigger": { "chanceHourly": 0.4, "whenAwake": true, "anyBelow": { "satiation": 30, "energy": 30, "happiness": 40 } },
+      "durationMinutes": 60,
+      "flags": { "isCrying": true },
+      "modifiers": { "actionSuccess": { "feed": -0.15 }, "actionEffectMultiplier": { "feed.satiation": 0.85 }, "happinessDecayPerMinute": 0.2 }
+    },
+    {
+      "id": "hungry",
+      "label": "饿了",
+      "trigger": { "chanceHourly": 0.25 },
+      "durationMinutes": 60,
+      "modifiers": { "actionSuccess": { "feed": -0.05 }, "actionEffectMultiplier": { "feed.satiation": 0.9 } }
+    },
+    {
+      "id": "pooped",
+      "label": "便便了",
+      "trigger": { "chanceHourly": 0.2 },
+      "durationMinutes": 120,
+      "flags": { "hasPooped": true },
+      "modifiers": { "hygieneDecayPerMinute": 0.3, "happinessModifier": -0.5 },
+      "clearOnAction": "clean"
+    }
+  ]
+}

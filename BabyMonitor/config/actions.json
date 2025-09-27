@@ -1,0 +1,52 @@
+{
+  "feed": [
+    { "label": "母乳", "accuracy": 0.95, "moodMultipliers": { "happy": 1.5, "sad": 0.8 }, "surgeRate": 0.1, "slumpRate": 0.05, "affinity": { "morality": 0.2, "physical": 0.2 }, "effect": { "satiation": 80, "energy": 5, "happiness": 5 }, "message": "喂了母乳", "requireAwake": true, "growth": { "morality": 1, "physical": 1 } },
+    { "label": "配方奶", "accuracy": 0.9, "surgeRate": 0.08, "slumpRate": 0.05, "affinity": { "physical": 0.2 }, "effect": { "satiation": 50, "energy": 5, "happiness": 3 }, "message": "喂了配方奶", "requireAwake": true },
+    { "label": "米糊", "accuracy": 0.88, "surgeRate": 0.06, "slumpRate": 0.06, "affinity": { "physical": 0.15 }, "effect": { "satiation": 45, "energy": 3, "happiness": 2 }, "message": "喂了米糊", "requireAwake": true },
+    { "label": "水果泥", "accuracy": 0.92, "moodMultipliers": { "happy": 1.5 }, "surgeRate": 0.12, "slumpRate": 0.05, "affinity": { "aesthetics": 0.25 }, "effect": { "satiation": 30, "energy": 2, "happiness": 8 }, "message": "喂了水果泥", "requireAwake": true, "growth": { "aesthetics": 1 } },
+    { "label": "蔬菜泥", "accuracy": 0.9, "surgeRate": 0.08, "slumpRate": 0.05, "affinity": { "morality": 0.15 }, "effect": { "satiation": 12, "energy": 3, "health": 3 }, "message": "喂了蔬菜泥", "requireAwake": true },
+    { "label": "鸡蛋羹", "accuracy": 0.85, "surgeRate": 0.1, "slumpRate": 0.08, "affinity": { "physical": 0.2 }, "effect": { "satiation": 30, "energy": 4, "happiness": 15 }, "message": "喂了鸡蛋羹", "requireAwake": true },
+    { "label": "鱼肉泥", "accuracy": 0.82, "surgeRate": 0.1, "slumpRate": 0.1, "affinity": { "physical": 0.25 }, "effect": { "satiation": 16, "energy": 3, "health": 5 }, "message": "喂了鱼肉泥", "requireAwake": true },
+    { "label": "饼干", "accuracy": 0.98, "moodMultipliers": { "happy": 1.5, "sad": 1.2 }, "surgeRate": 0.2, "slumpRate": 0.05, "affinity": { "aesthetics": 0.1 }, "effect": { "satiation": 15, "happiness": 35, "hygiene": -5 }, "message": "喂了饼干", "requireAwake": true }
+  ],
+  "clean": [
+    { "label": "换尿布", "accuracy": 0.97, "surgeRate": 0.08, "slumpRate": 0.03, "affinity": { "morality": 0.2 }, "effect": { "hygiene": 40, "happiness": 5 }, "message": "换了尿布", "poopClean": true, "growth": { "morality": 1 } },
+    { "label": "洗澡", "accuracy": 0.9, "surgeRate": 0.1, "slumpRate": 0.05, "affinity": { "aesthetics": 0.2 }, "effect": { "hygiene": 40, "happiness": 10 }, "message": "洗了澡", "requireAwake": true },
+    { "label": "擦脸", "accuracy": 0.95, "surgeRate": 0.08, "slumpRate": 0.04, "effect": { "hygiene": 15, "happiness": 3 }, "message": "擦了脸", "requireAwake": true },
+    { "label": "换衣服", "accuracy": 0.93, "surgeRate": 0.08, "slumpRate": 0.04, "effect": { "hygiene": 20, "happiness": 5 }, "message": "换了衣服", "requireAwake": true },
+    { "label": "洗手", "accuracy": 0.98, "surgeRate": 0.05, "slumpRate": 0.02, "effect": { "hygiene": 10, "happiness": 2 }, "message": "洗了手", "requireAwake": true },
+    { "label": "梳头", "accuracy": 0.9, "surgeRate": 0.1, "slumpRate": 0.05, "affinity": { "aesthetics": 0.2 }, "effect": { "hygiene": 8, "happiness": 4 }, "message": "梳了头", "requireAwake": true },
+    { "label": "剪指甲", "accuracy": 0.85, "surgeRate": 0.06, "slumpRate": 0.08, "effect": { "hygiene": 12, "happiness": -3 }, "message": "剪了指甲", "requireAwake": true },
+    { "label": "清理耳朵", "accuracy": 0.8, "surgeRate": 0.05, "slumpRate": 0.1, "effect": { "hygiene": 15, "happiness": -5 }, "message": "清理了耳朵", "requireAwake": true }
+  ],
+  "play": [
+    { "label": "摇铃", "accuracy": 0.9, "moodMultipliers": { "happy": 1.3, "sad": 0.7 }, "surgeRate": 0.12, "slumpRate": 0.08, "affinity": { "intelligence": 0.2 }, "effect": { "happiness": 15, "energy": -10, "satiation": -5 }, "message": "玩了摇铃", "requireAwake": true, "growth": { "intelligence": 1 } },
+    { "label": "躲猫猫", "accuracy": 0.88, "moodMultipliers": { "happy": 1.4, "sad": 0.8 }, "surgeRate": 0.12, "slumpRate": 0.08, "affinity": { "intelligence": 0.2 }, "effect": { "happiness": 20, "energy": -15, "satiation": -7 }, "message": "玩了躲猫猫", "requireAwake": true, "growth": { "intelligence": 1 } },
+    { "label": "讲故事", "accuracy": 0.93, "moodMultipliers": { "happy": 1.2 }, "surgeRate": 0.08, "slumpRate": 0.06, "affinity": { "morality": 0.1, "intelligence": 0.1 }, "effect": { "happiness": 10, "energy": -5, "satiation": -3 }, "message": "讲了故事", "requireAwake": true },
+    { "label": "唱歌", "accuracy": 0.9, "moodMultipliers": { "happy": 1.3 }, "surgeRate": 0.1, "slumpRate": 0.06, "affinity": { "aesthetics": 0.2 }, "effect": { "happiness": 12, "energy": -8, "satiation": -4 }, "message": "唱了歌", "requireAwake": true },
+    { "label": "搭积木", "accuracy": 0.85, "moodMultipliers": { "happy": 1.3, "sad": 0.8 }, "surgeRate": 0.12, "slumpRate": 0.1, "affinity": { "intelligence": 0.3 }, "effect": { "happiness": 18, "energy": -12, "satiation": -6 }, "message": "搭了积木", "requireAwake": true, "growth": { "intelligence": 2 } },
+    { "label": "玩娃娃", "accuracy": 0.92, "moodMultipliers": { "happy": 1.4 }, "surgeRate": 0.1, "slumpRate": 0.05, "affinity": { "aesthetics": 0.25 }, "effect": { "happiness": 16, "energy": -9, "satiation": -5 }, "message": "玩了娃娃", "requireAwake": true, "growth": { "aesthetics": 1 } },
+    { "label": "玩球", "accuracy": 0.87, "moodMultipliers": { "happy": 1.3, "sad": 0.8 }, "surgeRate": 0.12, "slumpRate": 0.08, "affinity": { "physical": 0.3 }, "effect": { "happiness": 22, "energy": -18, "satiation": -8 }, "message": "玩了球", "requireAwake": true, "growth": { "physical": 2 } },
+    { "label": "跳舞", "accuracy": 0.85, "moodMultipliers": { "happy": 1.4, "sad": 0.8 }, "surgeRate": 0.12, "slumpRate": 0.1, "affinity": { "aesthetics": 0.3 }, "effect": { "happiness": 25, "energy": -20, "satiation": -10 }, "message": "跳了舞", "requireAwake": true, "growth": { "aesthetics": 2 } }
+  ],
+  "sleep": [
+    { "label": "摇篮曲", "accuracy": 0.95, "moodMultipliers": { "happy": 1.2 }, "surgeRate": 0.08, "slumpRate": 0.04, "affinity": { "morality": 0.1 }, "effect": { "energy": 45, "happiness": 5 }, "message": "唱了摇篮曲", "requireAwake": true },
+    { "label": "轻拍", "accuracy": 0.96, "surgeRate": 0.06, "slumpRate": 0.03, "effect": { "energy": 15, "happiness": 3 }, "message": "轻轻拍背", "requireAwake": true },
+    { "label": "安抚奶嘴", "accuracy": 0.97, "surgeRate": 0.05, "slumpRate": 0.03, "effect": { "energy": 10, "happiness": 2 }, "message": "用了安抚奶嘴", "requireAwake": true },
+    { "label": "抱着走", "accuracy": 0.9, "surgeRate": 0.08, "slumpRate": 0.05, "effect": { "energy": 25, "happiness": 4 }, "message": "抱着走动", "requireAwake": true },
+    { "label": "讲故事", "accuracy": 0.93, "surgeRate": 0.06, "slumpRate": 0.04, "effect": { "energy": 12, "happiness": 3 }, "message": "讲了睡前故事", "requireAwake": true },
+    { "label": "放白噪音", "accuracy": 0.95, "surgeRate": 0.06, "slumpRate": 0.03, "effect": { "energy": 18, "happiness": 2 }, "message": "放了白噪音", "requireAwake": true },
+    { "label": "按摩", "accuracy": 0.9, "surgeRate": 0.08, "slumpRate": 0.05, "effect": { "energy": 22, "happiness": 5 }, "message": "做了按摩", "requireAwake": true },
+    { "label": "关灯", "accuracy": 0.99, "slumpRate": 0.02, "effect": { "energy": 30, "happiness": -3 }, "message": "关了灯", "requireAwake": true }
+  ],
+  "doctor": [
+    { "label": "量体温", "accuracy": 0.99, "surgeRate": 0.03, "slumpRate": 0.02, "effect": { "health": 5, "happiness": -2 }, "message": "量了体温" },
+    { "label": "喂药", "accuracy": 0.85, "surgeRate": 0.12, "slumpRate": 0.1, "affinity": { "morality": 0.2 }, "effect": { "health": 40, "happiness": -5 }, "message": "喂了药", "growth": { "morality": 1 } },
+    { "label": "看医生", "accuracy": 0.8, "surgeRate": 0.15, "slumpRate": 0.12, "effect": { "health": 45, "happiness": -8 }, "message": "看了医生" },
+    { "label": "维生素", "accuracy": 0.95, "surgeRate": 0.07, "slumpRate": 0.04, "effect": { "health": 10, "happiness": 1 }, "message": "吃了维生素" },
+    { "label": "打疫苗", "accuracy": 0.75, "surgeRate": 0.12, "slumpRate": 0.15, "effect": { "health": 15, "happiness": -10 }, "message": "打了疫苗" },
+    { "label": "物理降温", "accuracy": 0.9, "surgeRate": 0.1, "slumpRate": 0.08, "effect": { "health": 12, "happiness": -3 }, "message": "做了物理降温" },
+    { "label": "喂水", "accuracy": 0.98, "surgeRate": 0.05, "slumpRate": 0.03, "effect": { "health": 8, "happiness": 1 }, "message": "喂了水" },
+    { "label": "检查耳朵", "accuracy": 0.9, "surgeRate": 0.08, "slumpRate": 0.06, "effect": { "health": 7, "happiness": -2 }, "message": "检查了耳朵" }
+  ]
+}
