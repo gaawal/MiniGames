@@ -1,0 +1,1044 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>记忆挑战游戏</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #1a1c28, #2c3044);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 15px;
+            color: white;
+            overflow: hidden;
+        }
+
+        .game-container {
+            width: 100%;
+            max-width: 500px;
+            height: 90vh;
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 25px;
+            overflow: hidden;
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* 顶部状态栏 */
+        .header {
+            background: linear-gradient(90deg, #4f46e5, #7c3aed);
+            padding: 16px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .header h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+        }
+
+        .header h1 i {
+            margin-right: 10px;
+            font-size: 1.6rem;
+        }
+
+        .stats {
+            display: flex;
+            gap: 12px;
+        }
+
+        .stat-box {
+            background: rgba(0, 0, 0, 0.25);
+            padding: 8px 14px;
+            border-radius: 50px;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            min-width: 80px;
+            justify-content: center;
+        }
+
+        .stat-box i {
+            font-size: 1.1rem;
+        }
+
+        /* 分数变化动画 */
+        .score-change {
+            position: absolute;
+            right: 15px;
+            top: -25px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            animation: floatUp 1.5s forwards;
+            opacity: 0;
+        }
+
+        .score-up {
+            color: #48bb78;
+        }
+
+        .score-down {
+            color: #f56565;
+        }
+
+        /* 倒计时区域 */
+        .timer-section {
+            padding: 12px 20px 8px;
+            background: rgba(30, 41, 59, 0.45);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .timer-box {
+            flex-grow: 1;
+            background: rgba(0, 0, 0, 0.2);
+            height: 22px;
+            border-radius: 11px;
+            overflow: hidden;
+            position: relative;
+            box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.4);
+        }
+
+        .timer-progress {
+            position: absolute;
+            height: 100%;
+            background: linear-gradient(90deg, #10b981, #06b6d4);
+            border-radius: 11px;
+            transition: width 1s linear;
+        }
+
+        .timer-text {
+            font-weight: 700;
+            font-size: 1.1rem;
+            min-width: 50px;
+            text-align: center;
+            color: #fbbf24;
+        }
+
+        /* 游戏主屏幕 */
+        .game-screen {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 15px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* 记忆板区域 */
+        .memory-board {
+            flex-grow: 1;
+            border-radius: 20px;
+            background: rgba(30, 41, 59, 0.6);
+            margin-bottom: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .board-content {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
+            padding: 15px;
+            flex-wrap: nowrap;
+            overflow-x: auto;
+            scrollbar-width: none; /* Firefox */
+        }
+
+        .board-content::-webkit-scrollbar {
+            display: none; /* Chrome, Safari, Opera */
+        }
+
+        .board-item {
+            min-width: 60px;
+            height: 80px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: 800;
+            border-radius: 15px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+            flex-shrink: 0;
+            position: relative;
+        }
+
+        .number-item {
+            background: linear-gradient(145deg, #5b5fc7, #4f46e5);
+            color: white;
+            font-size: 2.5rem;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+        }
+
+        .pattern-item {
+            background: rgba(255, 255, 255, 0.9);
+            font-size: 1.8rem;
+        }
+
+        .input-item {
+            font-size: 2.2rem;
+            position: relative;
+        }
+
+        .input-correct {
+            background: rgba(72, 187, 120, 0.25);
+            color: #48bb78;
+        }
+
+        .input-wrong {
+            background: rgba(245, 101, 101, 0.25);
+            color: #f56565;
+            animation: shake 0.5s ease;
+        }
+
+        .input-empty {
+            background: rgba(30, 41, 59, 0.5);
+            color: rgba(255, 255, 255, 0.2);
+            border: 2px dashed rgba(255, 255, 255, 0.1);
+        }
+
+        .input-status {
+            position: absolute;
+            bottom: 5px;
+            right: 5px;
+            font-size: 1rem;
+            background: rgba(0,0,0,0.5);
+            border-radius: 50%;
+            width: 22px;
+            height: 22px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+
+        /* 结果反馈 */
+        .result-indicator {
+            position: absolute;
+            top: 15px;
+            left: 0;
+            width: 100%;
+            text-align: center;
+            font-size: 1.8rem;
+            font-weight: 700;
+            opacity: 0;
+            transform: translateY(-10px);
+            transition: all 0.3s ease;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            z-index: 10;
+        }
+
+        .result-indicator.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .correct-indicator {
+            color: #48bb78;
+        }
+
+        .wrong-indicator {
+            color: #f56565;
+        }
+
+        /* 模式提示 */
+        .mode-notice {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: rgba(15, 23, 42, 0.9);
+            z-index: 5;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.4s ease;
+        }
+
+        .mode-notice.show {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .mode-content {
+            text-align: center;
+            padding: 30px;
+        }
+
+        .mode-icon {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            color: #fbbf24;
+        }
+
+        .mode-text {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: #38bdf8;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        /* 输入面板 */
+        .input-panel {
+            padding: 15px;
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 12px;
+        }
+
+        .input-btn {
+            aspect-ratio: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-radius: 15px;
+            font-size: 2rem;
+            font-weight: 700;
+            cursor: pointer;
+            background: linear-gradient(145deg, #334155, #1e293b);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
+            transition: all 0.2s ease;
+            border: none;
+            color: #cbd5e1;
+        }
+
+        .input-btn:active {
+            transform: translateY(5px);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .input-btn:disabled {
+            opacity: 0.5;
+            transform: none;
+            box-shadow: none;
+            cursor: not-allowed;
+        }
+
+        .number-btn {
+            color: #38bdf8;
+        }
+
+        .pattern-btn {
+            color: #fbbf24;
+        }
+
+        /* 游戏统计 */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            padding: 15px;
+        }
+
+        .stat-card {
+            background: rgba(30, 41, 59, 0.7);
+            border-radius: 15px;
+            padding: 15px 10px;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .stat-label {
+            color: #94a3b8;
+            font-size: 0.95rem;
+            margin-bottom: 8px;
+        }
+
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: 800;
+        }
+
+        .stat-correct {
+            color: #48bb78;
+        }
+
+        .stat-highscore {
+            color: #fbbf24;
+        }
+
+        .stat-round {
+            color: #38bdf8;
+        }
+
+        /* 开始界面 */
+        .start-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 40px 20px;
+            text-align: center;
+            background: rgba(15, 23, 42, 0.95);
+            z-index: 30;
+        }
+
+        .start-screen h2 {
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+            background: linear-gradient(90deg, #8b5cf6, #ec4899);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .start-screen p {
+            max-width: 400px;
+            margin-bottom: 30px;
+            line-height: 1.6;
+            color: #cbd5e1;
+            font-size: 1.1rem;
+        }
+
+        .start-btn {
+            padding: 16px 50px;
+            background: linear-gradient(90deg, #4f46e5, #7c3aed);
+            border: none;
+            border-radius: 50px;
+            color: white;
+            font-size: 1.3rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 25px rgba(79, 70, 229, 0.7);
+        }
+
+        .start-btn:active {
+            transform: scale(0.98);
+        }
+
+        /* 结束弹窗 */
+        .result-popup {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 40;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.4s ease;
+        }
+
+        .result-popup.show {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .popup-content {
+            width: 85%;
+            padding: 30px;
+            background: rgba(30, 41, 59, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
+            text-align: center;
+        }
+
+        .popup-icon {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            color: #fbbf24;
+        }
+
+        .popup-title {
+            font-size: 2.2rem;
+            font-weight: 800;
+            margin-bottom: 20px;
+            color: #fbbf24;
+        }
+
+        .stats-list {
+            margin: 25px 0;
+            text-align: left;
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 1.2rem;
+        }
+
+        .stat-label {
+            color: #94a3b8;
+        }
+
+        .stat-number {
+            font-weight: 700;
+            color: #fbbf24;
+        }
+
+        .restart-btn {
+            padding: 15px 40px;
+            background: linear-gradient(90deg, #4f46e5, #7c3aed);
+            border: none;
+            border-radius: 50px;
+            color: white;
+            font-size: 1.2rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 20px rgba(79, 70, 229, 0.5);
+            margin-top: 15px;
+        }
+
+        /* 彩虹色序列 */
+        .color-0 { color: #FF6B6B; }
+        .color-1 { color: #FF9F45; }
+        .color-2 { color: #FFD93D; }
+        .color-3 { color: #6BCB77; }
+        .color-4 { color: #4D96FF; }
+        .color-5 { color: #9C51E0; }
+        .color-6 { color: #FF78C4; }
+        .color-7 { color: #FF5252; }
+        .color-8 { color: #FF9F1C; }
+        .color-9 { color: #32FF6A; }
+
+        /* 动画效果 */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+            20%, 40%, 60%, 80% { transform: translateX(5px); }
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        @keyframes floatUp {
+            0% { opacity: 1; transform: translateY(0); }
+            100% { opacity: 0; transform: translateY(-30px); }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.8); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .pulse {
+            animation: pulse 0.5s ease;
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease forwards;
+        }
+
+        /* 响应式调整 */
+        @media (max-height: 700px) {
+            .board-item {
+                min-width: 50px;
+                height: 70px;
+            }
+
+            .input-btn {
+                font-size: 1.8rem;
+            }
+
+            .stat-card {
+                padding: 12px 8px;
+            }
+
+            .stat-value {
+                font-size: 1.6rem;
+            }
+        }
+    </style>
+</head>
+<body>
+<div id="app" class="game-container">
+    <!-- 顶部状态栏 -->
+    <div class="header">
+        <h1><i class="fas fa-brain"></i>记忆挑战</h1>
+        <div class="stats">
+            <div class="stat-box" style="position: relative;">
+                <i class="fas fa-star"></i>
+                <span>{{ score }}</span>
+                <div v-if="showScoreChange" :class="['score-change', scoreChange > 0 ? 'score-up' : 'score-down']">
+                    {{ scoreChange > 0 ? '+' : '' }}{{ scoreChange }}
+                </div>
+            </div>
+            <div class="stat-box">
+                <i class="fas fa-trophy"></i>
+                <span>{{ currentLevel.name }}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 倒计时区域 -->
+    <div class="timer-section">
+        <i class="fas fa-hourglass-half"></i>
+        <div class="timer-box">
+            <div class="timer-progress" :style="{ width: timerProgress + '%' }"></div>
+        </div>
+        <div class="timer-text">{{ formattedTime }}</div>
+    </div>
+
+    <!-- 游戏主屏幕 -->
+    <div class="game-screen">
+        <!-- 记忆板区域 -->
+        <div class="memory-board">
+            <div class="mode-notice" :class="showModeNotice ? 'show' : ''">
+                <div class="mode-content">
+                    <div class="mode-icon">
+                        <i v-if="currentMode === 'number'" class="fas fa-hashtag"></i>
+                        <i v-else-if="currentMode === 'pattern'" class="fas fa-icons"></i>
+                        <i v-else class="fas fa-layer-group"></i>
+                    </div>
+                    <div class="mode-text">
+                        {{ modeText }}
+                    </div>
+                </div>
+            </div>
+
+            <div class="result-indicator" :class="[showResult ? 'show' : '', isCorrect ? 'correct-indicator' : 'wrong-indicator']">
+                <i :class="isCorrect ? 'fas fa-check-circle' : 'fas fa-times-circle'"></i>
+                {{ isCorrect ? '回答正确' : '回答错误' }}
+            </div>
+
+            <div class="board-content">
+                <template v-if="gameState === 'show'">
+                    <!-- 显示题目 -->
+                    <div v-for="(item, index) in currentSequence" :key="index"
+                         :class="['board-item',
+                          item.type === 'number' ? 'number-item' : 'pattern-item',
+                          'fade-in']">
+                        <span v-if="item.type === 'number'">{{ item.value }}</span>
+                        <i v-else :class="getPatternIcon(item.value, index)"></i>
+                    </div>
+                </template>
+
+                <template v-else>
+                    <!-- 显示用户输入 -->
+                    <div v-for="(item, index) in displayInput" :key="index"
+                         :class="['board-item', 'input-item',
+                          item.status === 'correct' ? 'input-correct' :
+                          item.status === 'wrong' ? 'input-wrong' : 'input-empty']">
+                        <span v-if="item.value !== null && currentMode === 'number'">{{ item.value }}</span>
+                        <i v-else-if="item.value !== null" :class="getPatternIcon(item.value, index)"></i>
+                        <i v-else class="fas fa-question"></i>
+
+                        <div v-if="item.status !== null" class="input-status">
+                            <i v-if="item.status === 'correct'" class="fas fa-check"></i>
+                            <i v-else class="fas fa-times"></i>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </div>
+
+        <!-- 输入面板 -->
+        <div class="input-panel">
+            <button v-for="num in 10" :key="num-1"
+                    @click="handleInput(num-1)"
+                    :class="['input-btn', currentMode === 'number' ? 'number-btn' : 'pattern-btn']"
+                    :disabled="isInputDisabled">
+                <span v-if="currentMode === 'number'">{{ num-1 }}</span>
+                <i v-else :class="getPatternIcon(num-1, num-1)"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- 游戏统计 -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-label">连续正确</div>
+            <div class="stat-value stat-correct">{{ consecutiveCorrect }}</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">最高记录</div>
+            <div class="stat-value stat-highscore">{{ highestScore }}</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">当前回合</div>
+            <div class="stat-value stat-round">{{ round }}</div>
+        </div>
+    </div>
+
+    <!-- 开始界面 -->
+    <div v-if="gameState === 'idle'" class="start-screen">
+        <h2>记忆挑战</h2>
+        <p>
+            记住屏幕上快速闪现的数字或图案，并在消失后按照相同顺序输入。
+            你有60秒时间，尽可能多地挑战高难度关卡！
+        </p>
+        <button @click="startGame" class="start-btn">
+            <i class="fas fa-play mr-2"></i>开始挑战
+        </button>
+    </div>
+
+    <!-- 结束弹窗 -->
+    <div :class="['result-popup', showGameOver ? 'show' : '']">
+        <div class="popup-content">
+            <div class="popup-icon">
+                <i class="fas fa-trophy"></i>
+            </div>
+            <div class="popup-title">游戏结束!</div>
+
+            <div class="stats-list">
+                <div class="stat-row">
+                    <span class="stat-label">最终得分:</span>
+                    <span class="stat-number">{{ score }}</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">达到等级:</span>
+                    <span class="stat-number">{{ currentLevel.name }}</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">完成回合:</span>
+                    <span class="stat-number">{{ round }}</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">最高连续:</span>
+                    <span class="stat-number">{{ maxConsecutive }}</span>
+                </div>
+            </div>
+
+            <button @click="restartGame" class="restart-btn">
+                <i class="fas fa-redo mr-2"></i>重新挑战
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const { createApp, ref, computed } = Vue;
+
+    createApp({
+        setup() {
+            // 游戏状态
+            const gameState = ref('idle');
+
+            // 分数和统计
+            const score = ref(0);
+            const highestScore = ref(0);
+            const consecutiveCorrect = ref(0);
+            const maxConsecutive = ref(0);
+            const round = ref(0);
+            const showScoreChange = ref(false);
+            const scoreChange = ref(0);
+
+            // 用户输入
+            const userInput = ref([]);
+            const displayInput = ref([]);
+
+            // 当前序列
+            const currentSequence = ref([]);
+
+            // 结果反馈
+            const showResult = ref(false);
+            const isCorrect = ref(false);
+            const isInputDisabled = ref(false);
+
+            // 游戏模式
+            const currentMode = ref('number');
+            const showModeNotice = ref(false);
+            const modeText = ref('');
+
+            // 倒计时
+            const gameTime = ref(60);
+            const timer = ref(null);
+            const timerProgress = ref(100);
+            const showGameOver = ref(false);
+
+            // 游戏级别配置
+            const levels = [
+                { id: 1, name: "入门", length: 3, type: 'number', showTime: 1000, points: 10 },
+                { id: 2, name: "初级", length: 4, type: 'number', showTime: 900, points: 15 },
+                { id: 3, name: "中级", length: 4, type: 'pattern', showTime: 1400, points: 20 },
+                { id: 4, name: "高级", length: 5, type: 'pattern', showTime: 1200, points: 25 },
+                { id: 5, name: "专家", length: 5, type: 'mix', showTime: 1300, points: 30 },
+                { id: 6, name: "大师", length: 6, type: 'mix', showTime: 1100, points: 35 },
+                { id: 7, name: "宗师", length: 6, type: 'mix', showTime: 1000, points: 40 },
+                { id: 8, name: "传奇", length: 7, type: 'mix', showTime: 900, points: 45 }
+            ];
+
+            // 当前等级
+            const currentLevelIndex = ref(0);
+            const currentLevel = computed(() => levels[currentLevelIndex.value]);
+
+            // 图标库 - Font Awesome 7图标
+            const patternIcons = [
+                'fa-solid fa-house', 'fa-solid fa-car', 'fa-solid fa-tree',
+                'fa-solid fa-cloud', 'fa-solid fa-sun', 'fa-solid fa-moon',
+                'fa-solid fa-star', 'fa-solid fa-heart', 'fa-solid fa-bell',
+                'fa-solid fa-key', 'fa-solid fa-flag', 'fa-solid fa-gift',
+                'fa-solid fa-camera', 'fa-solid fa-book', 'fa-solid fa-music',
+                'fa-solid fa-phone', 'fa-solid fa-envelope', 'fa-solid fa-lock',
+                'fa-solid fa-unlock', 'fa-solid fa-trash', 'fa-solid fa-cog',
+                'fa-solid fa-wifi', 'fa-solid fa-battery-full', 'fa-solid fa-bolt',
+                'fa-solid fa-fire', 'fa-solid fa-umbrella', 'fa-solid fa-gem',
+                'fa-solid fa-clock', 'fa-solid fa-map-marker', 'fa-solid fa-tag'
+            ];
+
+            // 格式化的时间显示
+            const formattedTime = computed(() => {
+                return `${gameTime.value}秒`;
+            });
+
+            // 获取图标和颜色
+            const getPatternIcon = (index, position) => {
+                return `${patternIcons[index % patternIcons.length]} color-${position % 10}`;
+            };
+
+            // 生成序列
+            const generateSequence = () => {
+                const sequence = [];
+                const length = currentLevel.value.length;
+                const mode = currentLevel.value.type;
+
+                for (let i = 0; i < length; i++) {
+                    if (mode === 'number') {
+                        sequence.push({ type: 'number', value: Math.floor(Math.random() * 10) });
+                    } else if (mode === 'pattern') {
+                        sequence.push({ type: 'pattern', value: Math.floor(Math.random() * patternIcons.length) });
+                    } else {
+                        if (Math.random() > 0.5) {
+                            sequence.push({ type: 'number', value: Math.floor(Math.random() * 10) });
+                        } else {
+                            sequence.push({ type: 'pattern', value: Math.floor(Math.random() * patternIcons.length) });
+                        }
+                    }
+                }
+
+                return sequence;
+            };
+
+            // 显示分数变化
+            const showScoreAnimation = (points) => {
+                scoreChange.value = points;
+                showScoreChange.value = true;
+
+                setTimeout(() => {
+                    showScoreChange.value = false;
+                }, 1500);
+            };
+
+            // 开始倒计时
+            const startTimer = () => {
+                clearInterval(timer.value);
+                gameTime.value = 60;
+                timerProgress.value = 100;
+                showGameOver.value = false;
+
+                timer.value = setInterval(() => {
+                    gameTime.value--;
+                    timerProgress.value = (gameTime.value / 60) * 100;
+
+                    if (gameTime.value <= 0) {
+                        clearInterval(timer.value);
+                        showGameOver.value = true;
+                    }
+                }, 1000);
+            };
+
+            // 开始游戏
+            const startGame = () => {
+                score.value = 0;
+                currentLevelIndex.value = 0;
+                consecutiveCorrect.value = 0;
+                maxConsecutive.value = 0;
+                round.value = 0;
+                startTimer();
+                nextRound();
+            };
+
+            // 重新开始游戏
+            const restartGame = () => {
+                gameState.value = 'idle';
+                startGame();
+            };
+
+            // 下一回合
+            const nextRound = () => {
+                if (gameTime.value <= 0) return;
+
+                round.value++;
+                userInput.value = [];
+                showResult.value = false;
+                isInputDisabled.value = false;
+                currentSequence.value = generateSequence();
+                currentMode.value = currentLevel.value.type;
+
+                // 设置模式文本
+                switch(currentMode.value) {
+                    case 'number':
+                        modeText.value = '数字模式';
+                        break;
+                    case 'pattern':
+                        modeText.value = '图案模式';
+                        break;
+                    case 'mix':
+                        modeText.value = '混合模式';
+                        break;
+                }
+
+                // 显示模式提示
+                showModeNotice.value = true;
+                setTimeout(() => {
+                    showModeNotice.value = false;
+
+                    // 初始化显示输入
+                    displayInput.value = Array(currentLevel.value.length).fill(null).map(() => ({
+                        value: null,
+                        status: null
+                    }));
+
+                    gameState.value = 'show';
+
+                    // 显示题目
+                    setTimeout(() => {
+                        gameState.value = 'input';
+                    }, currentLevel.value.showTime);
+                }, 1500);
+            };
+
+            // 处理输入
+            const handleInput = (value) => {
+                if (isInputDisabled.value || userInput.value.length >= currentSequence.value.length) return;
+
+                const currentIndex = userInput.value.length;
+                userInput.value.push(value);
+
+                // 检查是否正确
+                const currentItem = currentSequence.value[currentIndex];
+                const expectedValue = currentItem.type === 'pattern' ? currentItem.value : currentItem.value;
+                const isCorrectDigit = value === expectedValue;
+
+                // 更新显示
+                displayInput.value[currentIndex] = {
+                    value: value,
+                    status: isCorrectDigit ? 'correct' : 'wrong'
+                };
+
+                if (isCorrectDigit) {
+                    // 当前正确
+                    if (currentIndex === currentSequence.value.length - 1) {
+                        // 全部正确
+                        showResult.value = true;
+                        isCorrect.value = true;
+                        isInputDisabled.value = true;
+                        showScoreAnimation(currentLevel.value.points);
+                        score.value += currentLevel.value.points;
+                        consecutiveCorrect.value++;
+
+                        // 更新最高连续
+                        if (consecutiveCorrect.value > maxConsecutive.value) {
+                            maxConsecutive.value = consecutiveCorrect.value;
+                        }
+
+                        // 升级检查
+                        if (consecutiveCorrect.value >= 3 && currentLevelIndex.value < levels.length - 1) {
+                            currentLevelIndex.value++;
+                        }
+
+                        // 更新最高分
+                        if (score.value > highestScore.value) {
+                            highestScore.value = score.value;
+                        }
+
+                        // 2秒后下一回合
+                        setTimeout(() => {
+                            nextRound();
+                        }, 2000);
+                    }
+                } else {
+                    // 输入错误
+                    showResult.value = true;
+                    isCorrect.value = false;
+                    isInputDisabled.value = true;
+                    const pointsLoss = Math.floor(currentLevel.value.points / 2);
+                    showScoreAnimation(-pointsLoss);
+                    score.value = Math.max(0, score.value - pointsLoss);
+
+                    // 重置连续正确计数
+                    consecutiveCorrect.value = 0;
+
+                    // 2秒后下一回合
+                    setTimeout(() => {
+                        nextRound();
+                    }, 2000);
+                }
+            };
+
+            return {
+                gameState,
+                score,
+                userInput,
+                displayInput,
+                currentSequence,
+                showResult,
+                isCorrect,
+                isInputDisabled,
+                currentMode,
+                currentLevelIndex,
+                currentLevel,
+                consecutiveCorrect,
+                maxConsecutive,
+                round,
+                highestScore,
+                timerProgress,
+                formattedTime,
+                showGameOver,
+                showScoreChange,
+                scoreChange,
+                showModeNotice,
+                modeText,
+                startGame,
+                restartGame,
+                handleInput,
+                getPatternIcon
+            };
+        }
+    }).mount('#app');
+</script>
+</body>
+</html>
