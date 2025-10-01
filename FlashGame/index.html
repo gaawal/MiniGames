@@ -152,6 +152,7 @@
 
         /* 记忆板区域 */
         .memory-board {
+            max-height: 40%;
             flex-grow: 1;
             border-radius: 20px;
             background: rgba(30, 41, 59, 0.6);
@@ -182,7 +183,7 @@
 
         .board-item {
             min-width: 60px;
-            height: 80px;
+            height: 50px;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -243,72 +244,41 @@
             color: white;
         }
 
-        /* 结果反馈 */
-        .result-indicator {
-            position: absolute;
-            top: 15px;
-            left: 0;
-            width: 100%;
-            text-align: center;
-            font-size: 1.8rem;
-            font-weight: 700;
-            opacity: 0;
-            transform: translateY(-10px);
-            transition: all 0.3s ease;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 10px;
-            z-index: 10;
-        }
-
-        .result-indicator.show {
-            opacity: 1;
-            transform: translateY(0);
-        }
-
-        .correct-indicator {
-            color: #48bb78;
-        }
-
-        .wrong-indicator {
-            color: #f56565;
-        }
-
         /* 模式提示 */
-        .mode-notice {
+        .mode-hint {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
-            height: 100%;
+            height: 20%;
+            background: rgba(15, 23, 42, 0.85);
             display: flex;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
-            background: rgba(15, 23, 42, 0.9);
-            z-index: 5;
+            z-index: 20;
             opacity: 0;
             pointer-events: none;
             transition: opacity 0.4s ease;
         }
 
-        .mode-notice.show {
+        .mode-hint.show {
             opacity: 1;
             pointer-events: all;
         }
 
-        .mode-content {
+        .hint-content {
             text-align: center;
             padding: 30px;
         }
 
-        .mode-icon {
+        .hint-icon {
             font-size: 4rem;
             margin-bottom: 20px;
             color: #fbbf24;
         }
 
-        .mode-text {
+        .hint-text {
             font-size: 2.5rem;
             font-weight: 800;
             color: #38bdf8;
@@ -626,42 +596,34 @@
     <div class="game-screen">
         <!-- 记忆板区域 -->
         <div class="memory-board">
-            <div class="mode-notice" :class="showModeNotice ? 'show' : ''">
-                <div class="mode-content">
-                    <div class="mode-icon">
-                        <i v-if="currentMode === 'number'" class="fas fa-hashtag"></i>
-                        <i v-else-if="currentMode === 'pattern'" class="fas fa-icons"></i>
-                        <i v-else class="fas fa-layer-group"></i>
-                    </div>
-                    <div class="mode-text">
+            <!-- 模式提示 -->
+            <div class="mode-hint" :class="showModeHint ? 'show' : ''">
+                <div class="hint-content">
+
+                    <div class="hint-text">
                         {{ modeText }}
                     </div>
                 </div>
             </div>
 
-            <div class="result-indicator" :class="[showResult ? 'show' : '', isCorrect ? 'correct-indicator' : 'wrong-indicator']">
-                <i :class="isCorrect ? 'fas fa-check-circle' : 'fas fa-times-circle'"></i>
-                {{ isCorrect ? '回答正确' : '回答错误' }}
-            </div>
-
             <div class="board-content">
+                <!-- 显示题目阶段 -->
                 <template v-if="gameState === 'show'">
-                    <!-- 显示题目 -->
                     <div v-for="(item, index) in currentSequence" :key="index"
                          :class="['board-item',
-                          item.type === 'number' ? 'number-item' : 'pattern-item',
-                          'fade-in']">
+                         item.type === 'number' ? 'number-item' : 'pattern-item',
+                         'fade-in']">
                         <span v-if="item.type === 'number'">{{ item.value }}</span>
                         <i v-else :class="getPatternIcon(item.value, index)"></i>
                     </div>
                 </template>
 
+                <!-- 输入阶段 -->
                 <template v-else>
-                    <!-- 显示用户输入 -->
                     <div v-for="(item, index) in displayInput" :key="index"
                          :class="['board-item', 'input-item',
-                          item.status === 'correct' ? 'input-correct' :
-                          item.status === 'wrong' ? 'input-wrong' : 'input-empty']">
+                         item.status === 'correct' ? 'input-correct' :
+                         item.status === 'wrong' ? 'input-wrong' : 'input-empty']">
                         <span v-if="item.value !== null && currentMode === 'number'">{{ item.value }}</span>
                         <i v-else-if="item.value !== null" :class="getPatternIcon(item.value, index)"></i>
                         <i v-else class="fas fa-question"></i>
@@ -677,12 +639,12 @@
 
         <!-- 输入面板 -->
         <div class="input-panel">
-            <button v-for="num in 10" :key="num-1"
-                    @click="handleInput(num-1)"
+            <button v-for="option in currentOptions" :key="option.id"
+                    @click="handleInput(option.value)"
                     :class="['input-btn', currentMode === 'number' ? 'number-btn' : 'pattern-btn']"
                     :disabled="isInputDisabled">
-                <span v-if="currentMode === 'number'">{{ num-1 }}</span>
-                <i v-else :class="getPatternIcon(num-1, num-1)"></i>
+                <span v-if="currentMode === 'number'">{{ option.value }}</span>
+                <i v-else :class="getPatternIcon(option.value, option.id)"></i>
             </button>
         </div>
     </div>
@@ -770,18 +732,19 @@
             const userInput = ref([]);
             const displayInput = ref([]);
 
+            // 当前选项
+            const currentOptions = ref([]);
+
             // 当前序列
             const currentSequence = ref([]);
 
             // 结果反馈
-            const showResult = ref(false);
-            const isCorrect = ref(false);
             const isInputDisabled = ref(false);
 
             // 游戏模式
             const currentMode = ref('number');
-            const showModeNotice = ref(false);
             const modeText = ref('');
+            const showModeHint = ref(false);
 
             // 倒计时
             const gameTime = ref(60);
@@ -793,12 +756,14 @@
             const levels = [
                 { id: 1, name: "入门", length: 3, type: 'number', showTime: 1000, points: 10 },
                 { id: 2, name: "初级", length: 4, type: 'number', showTime: 900, points: 15 },
-                { id: 3, name: "中级", length: 4, type: 'pattern', showTime: 1400, points: 20 },
-                { id: 4, name: "高级", length: 5, type: 'pattern', showTime: 1200, points: 25 },
-                { id: 5, name: "专家", length: 5, type: 'mix', showTime: 1300, points: 30 },
-                { id: 6, name: "大师", length: 6, type: 'mix', showTime: 1100, points: 35 },
-                { id: 7, name: "宗师", length: 6, type: 'mix', showTime: 1000, points: 40 },
-                { id: 8, name: "传奇", length: 7, type: 'mix', showTime: 900, points: 45 }
+                { id: 3, name: "中级", length: 1, type: 'pattern', showTime: 1400, points: 20 },
+                { id: 4, name: "高级", length: 2, type: 'pattern', showTime: 1200, points: 25 },
+                { id: 5, name: "专家", length: 3, type: 'pattern', showTime: 1300, points: 30 },
+                { id: 6, name: "大师", length: 4, type: 'number', showTime: 1100, points: 35 },
+                { id: 7, name: "宗师", length: 5, type: 'number', showTime: 1000, points: 40 },
+                { id: 8, name: "传奇", length: 4, type: 'pattern', showTime: 1000, points: 45 },
+                { id: 8, name: "传奇", length: 5, type: 'mix', showTime: 1000, points: 45 },
+                { id: 8, name: "传奇", length: 6, type: 'mix', showTime: 900, points: 45 },
             ];
 
             // 当前等级
@@ -829,22 +794,60 @@
                 return `${patternIcons[index % patternIcons.length]} color-${position % 10}`;
             };
 
+            // 生成选项（确保包含正确答案）
+            const generateOptions = () => {
+                const options = new Set();
+
+                // 首先尝试添加所有正确答案
+                currentSequence.value.forEach(item => {
+                    if (item.type === 'pattern') {
+                        options.add(item.value);
+                    } else {
+                        options.add(item.value);
+                    }
+                });
+
+                // 补充选项直到10个
+                const maxValue = currentMode.value === 'pattern' ? patternIcons.length : 10;
+                while (options.size < 10) {
+                    const randomValue = Math.floor(Math.random() * maxValue);
+                    options.add(randomValue);
+                }
+
+                // 转换为数组并随机排序
+                return Array.from(options).map((value, index) => ({
+                    id: index,
+                    value: value
+                })).sort(() => Math.random() - 0.5);
+            };
+
             // 生成序列
             const generateSequence = () => {
                 const sequence = [];
                 const length = currentLevel.value.length;
                 const mode = currentLevel.value.type;
 
+                // 生成序列时记录使用的值，用于后面生成选项
+                const usedValues = new Set();
+
                 for (let i = 0; i < length; i++) {
                     if (mode === 'number') {
-                        sequence.push({ type: 'number', value: Math.floor(Math.random() * 10) });
+                        const value = Math.floor(Math.random() * 10);
+                        sequence.push({ type: 'number', value: value });
+                        usedValues.add(value);
                     } else if (mode === 'pattern') {
-                        sequence.push({ type: 'pattern', value: Math.floor(Math.random() * patternIcons.length) });
+                        const value = Math.floor(Math.random() * patternIcons.length);
+                        sequence.push({ type: 'pattern', value: value });
+                        usedValues.add(value);
                     } else {
                         if (Math.random() > 0.5) {
-                            sequence.push({ type: 'number', value: Math.floor(Math.random() * 10) });
+                            const value = Math.floor(Math.random() * 10);
+                            sequence.push({ type: 'number', value: value });
+                            usedValues.add(value);
                         } else {
-                            sequence.push({ type: 'pattern', value: Math.floor(Math.random() * patternIcons.length) });
+                            const value = Math.floor(Math.random() * patternIcons.length);
+                            sequence.push({ type: 'pattern', value: value });
+                            usedValues.add(value);
                         }
                     }
                 }
@@ -882,6 +885,7 @@
 
             // 开始游戏
             const startGame = () => {
+                gameState.value = 'show';
                 score.value = 0;
                 currentLevelIndex.value = 0;
                 consecutiveCorrect.value = 0;
@@ -903,10 +907,12 @@
 
                 round.value++;
                 userInput.value = [];
-                showResult.value = false;
                 isInputDisabled.value = false;
                 currentSequence.value = generateSequence();
                 currentMode.value = currentLevel.value.type;
+
+                // 生成选项（确保包含正确答案）
+                currentOptions.value = generateOptions();
 
                 // 设置模式文本
                 switch(currentMode.value) {
@@ -922,9 +928,9 @@
                 }
 
                 // 显示模式提示
-                showModeNotice.value = true;
+                showModeHint.value = true;
                 setTimeout(() => {
-                    showModeNotice.value = false;
+                    showModeHint.value = false;
 
                     // 初始化显示输入
                     displayInput.value = Array(currentLevel.value.length).fill(null).map(() => ({
@@ -938,7 +944,7 @@
                     setTimeout(() => {
                         gameState.value = 'input';
                     }, currentLevel.value.showTime);
-                }, 1500);
+                }, 500); // 模式提示显示0.5秒
             };
 
             // 处理输入
@@ -950,7 +956,12 @@
 
                 // 检查是否正确
                 const currentItem = currentSequence.value[currentIndex];
-                const expectedValue = currentItem.type === 'pattern' ? currentItem.value : currentItem.value;
+                let expectedValue;
+                if (currentItem.type === 'pattern') {
+                    expectedValue = currentItem.value;
+                } else {
+                    expectedValue = currentItem.value;
+                }
                 const isCorrectDigit = value === expectedValue;
 
                 // 更新显示
@@ -963,8 +974,6 @@
                     // 当前正确
                     if (currentIndex === currentSequence.value.length - 1) {
                         // 全部正确
-                        showResult.value = true;
-                        isCorrect.value = true;
                         isInputDisabled.value = true;
                         showScoreAnimation(currentLevel.value.points);
                         score.value += currentLevel.value.points;
@@ -992,8 +1001,6 @@
                     }
                 } else {
                     // 输入错误
-                    showResult.value = true;
-                    isCorrect.value = false;
                     isInputDisabled.value = true;
                     const pointsLoss = Math.floor(currentLevel.value.points / 2);
                     showScoreAnimation(-pointsLoss);
@@ -1014,9 +1021,8 @@
                 score,
                 userInput,
                 displayInput,
+                currentOptions,
                 currentSequence,
-                showResult,
-                isCorrect,
                 isInputDisabled,
                 currentMode,
                 currentLevelIndex,
@@ -1030,7 +1036,7 @@
                 showGameOver,
                 showScoreChange,
                 scoreChange,
-                showModeNotice,
+                showModeHint,
                 modeText,
                 startGame,
                 restartGame,
