@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nintendo Switch - Dino Game</title>
+  <style>
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      background-color: #f0f2f5;
+      font-family: 'Courier New', Courier, monospace; /* 像素风格字体 */
+      overflow: hidden;
+      user-select: none;
+    }
+    .container {
+      /* background: white; Removed container bg to focus on console */
+      padding: 20px;
+      text-align: center;
+      position: relative;
+    }
+    svg {
+      max-width: 100%;
+      height: auto;
+      filter: drop-shadow(0 15px 35px rgba(0,0,0,0.4));
+      display: block;
+    }
+
+    /* 交互样式 */
+    .interactive-btn {
+      cursor: pointer;
+      transition: opacity 0.1s;
+      fill-opacity: 0.8;
+    }
+    .interactive-btn:hover {
+      fill-opacity: 1;
+    }
+    .interactive-btn:active {
+      filter: brightness(0.8);
+      transform-box: fill-box;
+      transform-origin: center;
+      transform: scale(0.95);
+    }
+
+    .d-pad-btn:active {
+      fill: #222;
+    }
+
+    /* 游戏文本样式 */
+    .game-text {
+      font-family: 'Courier New', monospace;
+      font-weight: bold;
+      fill: #535353;
+    }
+
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <!-- SVG Start -->
+  <svg id="console-svg" width="800" height="350" viewBox="0 0 600 250" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <!-- 材质渐变 -->
+      <linearGradient id="joyconBlue" x1="0%" y1="0%" x2="100%" y2="0%">
+        <stop offset="0%" style="stop-color:#00C3E3;stop-opacity:1" />
+        <stop offset="100%" style="stop-color:#00A8C4;stop-opacity:1" />
+      </linearGradient>
+      <linearGradient id="joyconRed" x1="0%" y1="0%" x2="100%" y2="0%">
+        <stop offset="0%" style="stop-color:#FF4554;stop-opacity:1" />
+        <stop offset="100%" style="stop-color:#E63543;stop-opacity:1" />
+      </linearGradient>
+      <clipPath id="screenClip">
+        <rect x="155" y="50" width="290" height="150" />
+      </clipPath>
+
+      <!-- 游戏资产 (Google Dino Assets as SVG Paths) -->
+      <g id="asset-dino">
+        <!-- 简单的像素恐龙路径 -->
+        <path d="M10,0 L20,0 L20,2 L22,2 L22,4 L24,4 L24,6 L20,6 L20,8 L18,8 L18,12 L14,12 L14,16 L12,16 L12,20 L10,20 L10,24 L12,24 L12,26 L6,26 L6,22 L4,22 L4,20 L2,20 L2,12 L4,12 L4,8 L6,8 L6,4 L10,4 Z M22,2 L24,2 L24,4 L22,4 Z" fill="#535353" transform="scale(0.8)"/>
+      </g>
+      <g id="asset-cactus-1">
+        <path d="M4,0 L8,0 L8,16 L12,16 L12,10 L16,10 L16,18 L8,18 L8,24 L4,24 L4,14 L0,14 L0,6 L4,6 Z" fill="#535353"/>
+      </g>
+      <g id="asset-cactus-2">
+        <path d="M6,0 L10,0 L10,8 L14,8 L14,4 L18,4 L18,12 L10,12 L10,20 L6,20 L6,14 L2,14 L2,10 L6,10 Z M16,6 L20,6 L20,14 L16,14 Z M0,8 L4,8 L4,16 L0,16 Z" fill="#535353"/>
+      </g>
+      <g id="asset-cloud">
+        <path d="M10,0 L20,0 L20,2 L24,2 L24,6 L20,6 L20,8 L6,8 L6,6 L2,6 L2,4 L6,4 L6,2 L10,2 Z" fill="#D3D3D3" opacity="0.8"/>
+      </g>
+    </defs>
+
+    <!-- Left Joy-Con (Blue) -->
+    <path d="M60,25 H130 V225 H60 A45,45 0 0 1 15,180 V70 A45,45 0 0 1 60,25 Z" fill="url(#joyconBlue)" />
+
+    <!-- Left Controls Group -->
+    <g id="left-controls">
+      <!-- Analog Stick -->
+      <g class="interactive-btn" id="btn-l-stick" onclick="handleInput('stick')">
+        <circle cx="75" cy="80" r="18" fill="#333" stroke="#222" stroke-width="2"/>
+        <circle cx="75" cy="80" r="16" fill="#444"/>
+      </g>
+
+      <!-- D-Pad Buttons -->
+      <g class="d-pad">
+        <circle class="interactive-btn" id="btn-up" cx="75" cy="135" r="8" fill="#333" onclick="handleInput('jump')" />
+        <circle class="interactive-btn" id="btn-down" cx="75" cy="165" r="8" fill="#333" onclick="handleInput('duck')" />
+        <circle class="interactive-btn" id="btn-left" cx="60" cy="150" r="8" fill="#333" onclick="handleInput('move')" />
+        <circle class="interactive-btn" id="btn-right" cx="90" cy="150" r="8" fill="#333" onclick="handleInput('move')" />
+      </g>
+
+      <!-- Minus Button -->
+      <rect class="interactive-btn" id="btn-minus" x="85" y="45" width="12" height="4" rx="2" fill="#333" onclick="resetGame()" />
+      <!-- Capture Button -->
+      <g class="interactive-btn" id="btn-capture" onclick="triggerEffect('capture')">
+        <rect x="80" y="190" width="12" height="12" rx="2" fill="#333" />
+        <circle cx="86" cy="196" r="4" fill="#444" />
+      </g>
+    </g>
+
+    <!-- Main Console Body -->
+    <rect x="130" y="25" width="340" height="200" rx="5" fill="#2C2C2C" />
+
+    <!-- Screen Bezel -->
+    <rect x="145" y="40" width="310" height="170" rx="2" fill="black" />
+
+    <!-- Actual Game Screen Area -->
+    <g clip-path="url(#screenClip)">
+      <!-- Background -->
+      <rect x="155" y="50" width="290" height="150" fill="#f7f7f7" />
+
+      <!-- Game World Group -->
+      <g id="game-world">
+        <!-- Ground Line -->
+        <line x1="155" y1="180" x2="445" y2="180" stroke="#535353" stroke-width="2" />
+
+        <!-- Clouds (Dynamic) -->
+        <g id="clouds-container"></g>
+
+        <!-- Obstacles (Dynamic) -->
+        <g id="obstacles-container"></g>
+
+        <!-- Dino Player -->
+        <use id="player-dino" href="#asset-dino" x="170" y="155" />
+
+        <!-- Score -->
+        <text id="score-display" x="430" y="70" text-anchor="end" class="game-text" font-size="12">00000</text>
+
+        <!-- Game Over Message -->
+        <g id="game-over-msg" class="hidden">
+          <text x="300" y="110" text-anchor="middle" class="game-text" font-size="14">G A M E  O V E R</text>
+          <text x="300" y="130" text-anchor="middle" class="game-text" font-size="8" fill="#777">PRESS A TO RESTART</text>
+          <path d="M290,140 C290,140 300,135 310,140 C310,140 300,150 290,140" fill="none" stroke="#535353" stroke-width="2" />
+        </g>
+
+        <!-- Start Message -->
+        <g id="start-msg">
+          <text x="300" y="100" text-anchor="middle" class="game-text" font-size="10">PRESS A TO START</text>
+          <text x="300" y="120" text-anchor="middle" class="game-text" font-size="8" fill="#888">USE BUTTONS TO PLAY</text>
+        </g>
+      </g>
+
+      <!-- Screen Glare (Overlay) -->
+      <path d="M155,50 L300,50 L200,200 L155,200 Z" fill="white" opacity="0.05" pointer-events="none" />
+    </g>
+
+    <!-- Right Joy-Con (Red) -->
+    <path d="M470,25 H540 A45,45 0 0 1 585,70 V180 A45,45 0 0 1 540,225 H470 V25 Z" fill="url(#joyconRed)" />
+
+    <!-- Right Controls Group -->
+    <g id="right-controls">
+      <!-- Analog Stick -->
+      <g class="interactive-btn" id="btn-r-stick" onclick="handleInput('stick')">
+        <circle cx="525" cy="150" r="18" fill="#333" stroke="#222" stroke-width="2"/>
+        <circle cx="525" cy="150" r="16" fill="#444"/>
+      </g>
+
+      <!-- ABXY Buttons -->
+      <g class="abxy-btns">
+        <g class="interactive-btn" id="btn-x" onclick="handleInput('jump')">
+          <circle cx="525" cy="75" r="8" fill="#333" />
+          <text x="525" y="78" font-size="5" fill="#888" text-anchor="middle" pointer-events="none">X</text>
+        </g>
+        <g class="interactive-btn" id="btn-b" onclick="handleInput('jump')">
+          <circle cx="525" cy="105" r="8" fill="#333" />
+          <text x="525" y="108" font-size="5" fill="#888" text-anchor="middle" pointer-events="none">B</text>
+        </g>
+        <g class="interactive-btn" id="btn-y" onclick="handleInput('jump')">
+          <circle cx="510" cy="90" r="8" fill="#333" />
+          <text x="510" y="93" font-size="5" fill="#888" text-anchor="middle" pointer-events="none">Y</text>
+        </g>
+        <g class="interactive-btn" id="btn-a" onclick="handleInput('jump')">
+          <circle cx="540" cy="90" r="8" fill="#333" />
+          <text x="540" y="93" font-size="5" fill="#888" text-anchor="middle" pointer-events="none">A</text>
+        </g>
+      </g>
+
+      <!-- Plus Button -->
+      <path class="interactive-btn" id="btn-plus" d="M505,45 H517 M511,39 V51" stroke="#333" stroke-width="4" stroke-linecap="round" onclick="resetGame()" />
+
+      <!-- Home Button -->
+      <g class="interactive-btn" id="btn-home" onclick="location.reload()">
+        <circle cx="520" cy="195" r="8" fill="#333" stroke="#444" stroke-width="1"/>
+        <circle cx="520" cy="195" r="6" fill="none" stroke="#222" stroke-width="1"/>
+      </g>
+    </g>
+
+    <!-- Shoulder Button Hints -->
+    <path d="M60,28 H128" stroke="#222" stroke-width="2" opacity="0.5"/>
+    <path d="M472,28 H540" stroke="#222" stroke-width="2" opacity="0.5"/>
+
+  </svg>
+
+  <p style="margin-top: 20px; color: #666; font-size: 14px;">点击 <b>A</b>, <b>B</b>, <b>X</b>, <b>Y</b> 或 <b>方向上键</b> 跳跃。点击 <b>-</b> 或 <b>+</b> 重置。</p>
+</div>
+
+<script>
+  // 游戏状态变量
+  const gameState = {
+    isRunning: false,
+    isGameOver: false,
+    score: 0,
+    speed: 3,
+    gravity: 0.6,
+    lastTime: 0
+  };
+
+  // 实体对象
+  const dino = {
+    element: document.getElementById('player-dino'),
+    x: 170,
+    y: 155,
+    dy: 0,
+    jumpForce: -8,
+    groundY: 155,
+    isJumping: false
+  };
+
+  const obstaclesContainer = document.getElementById('obstacles-container');
+  const cloudsContainer = document.getElementById('clouds-container');
+  const scoreDisplay = document.getElementById('score-display');
+  const startMsg = document.getElementById('start-msg');
+  const gameOverMsg = document.getElementById('game-over-msg');
+
+  let obstacles = [];
+  let clouds = [];
+  let gameLoopId;
+  let frameCount = 0;
+
+  // 初始化云朵
+  function spawnCloud() {
+    if (!gameState.isRunning) return;
+    const id = 'cloud-' + Date.now();
+    const cloud = document.createElementNS("http://www.w3.org/2000/svg", "use");
+    cloud.setAttribute('href', '#asset-cloud');
+    cloud.setAttribute('x', 450); // 屏幕右侧之外
+    cloud.setAttribute('y', 60 + Math.random() * 50);
+    cloud.setAttribute('id', id);
+    cloudsContainer.appendChild(cloud);
+    clouds.push({ element: cloud, x: 450, speed: 0.5 + Math.random() * 0.5 });
+  }
+
+  // 生成障碍物
+  function spawnObstacle() {
+    if (!gameState.isRunning) return;
+    const type = Math.random() > 0.5 ? '#asset-cactus-1' : '#asset-cactus-2';
+    const id = 'obs-' + Date.now();
+    const obs = document.createElementNS("http://www.w3.org/2000/svg", "use");
+    obs.setAttribute('href', type);
+    obs.setAttribute('x', 450);
+    obs.setAttribute('y', 156); // 地面高度
+    obs.setAttribute('id', id);
+    obstaclesContainer.appendChild(obs);
+    obstacles.push({
+      element: obs,
+      x: 450,
+      width: 15, // 碰撞箱宽度
+      height: 20, // 碰撞箱高度
+      passed: false
+    });
+  }
+
+  // 处理输入
+  function handleInput(action) {
+    if (action === 'jump') {
+      // 开始游戏
+      if (!gameState.isRunning && !gameState.isGameOver) {
+        startGame();
+        return;
+      }
+      // 重启游戏
+      if (gameState.isGameOver) {
+        resetGame();
+        return;
+      }
+      // 跳跃逻辑
+      if (!dino.isJumping) {
+        dino.isJumping = true;
+        dino.dy = dino.jumpForce;
+      }
+    }
+  }
+
+  // 开始游戏
+  function startGame() {
+    gameState.isRunning = true;
+    startMsg.classList.add('hidden');
+    gameLoopId = requestAnimationFrame(update);
+  }
+
+  // 重置游戏
+  function resetGame() {
+    gameState.isRunning = false;
+    gameState.isGameOver = false;
+    gameState.score = 0;
+    gameState.speed = 3;
+
+    dino.y = dino.groundY;
+    dino.dy = 0;
+    dino.isJumping = false;
+    dino.element.setAttribute('y', dino.y);
+
+    // 清除障碍物和云
+    obstaclesContainer.innerHTML = '';
+    obstacles = [];
+    cloudsContainer.innerHTML = '';
+    clouds = [];
+
+    scoreDisplay.textContent = "00000";
+    gameOverMsg.classList.add('hidden');
+    startMsg.classList.remove('hidden');
+
+    cancelAnimationFrame(gameLoopId);
+  }
+
+  // 游戏主循环
+  function update(time) {
+    if (!gameState.isRunning) return;
+
+    frameCount++;
+
+    // 1. 更新恐龙物理
+    if (dino.isJumping) {
+      dino.dy += gameState.gravity;
+      dino.y += dino.dy;
+
+      if (dino.y >= dino.groundY) {
+        dino.y = dino.groundY;
+        dino.isJumping = false;
+        dino.dy = 0;
+      }
+      dino.element.setAttribute('y', dino.y);
+    }
+
+    // 2. 障碍物逻辑
+    if (frameCount % 100 === 0) { // 每100帧生成一个障碍
+      if (Math.random() > 0.3) spawnObstacle();
+    }
+
+    obstacles.forEach((obs, index) => {
+      obs.x -= gameState.speed;
+      obs.element.setAttribute('x', obs.x);
+
+      // 简单的碰撞检测 (AABB)
+      // 恐龙 x: 170, 宽: ~20
+      // 恐龙 y: dino.y (底部在 y+24)
+      if (
+              obs.x < 170 + 15 && // 恐龙右边缘
+              obs.x + obs.width > 170 + 5 && // 恐龙左边缘
+              dino.y + 20 > 156 // 恐龙底部 > 障碍物顶部
+      ) {
+        gameOver();
+      }
+
+      // 移除屏幕外的障碍物
+      if (obs.x < 150) {
+        obs.element.remove();
+        obstacles.splice(index, 1);
+      }
+    });
+
+    // 3. 云朵逻辑
+    if (frameCount % 150 === 0) spawnCloud();
+
+    clouds.forEach((cloud, index) => {
+      cloud.x -= cloud.speed;
+      cloud.element.setAttribute('x', cloud.x);
+      if (cloud.x < 150) {
+        cloud.element.remove();
+        clouds.splice(index, 1);
+      }
+    });
+
+    // 4. 分数更新
+    if (frameCount % 10 === 0) {
+      gameState.score++;
+      scoreDisplay.textContent = gameState.score.toString().padStart(5, '0');
+      // 难度增加
+      if (gameState.score % 500 === 0) {
+        gameState.speed += 0.5;
+      }
+    }
+
+    gameLoopId = requestAnimationFrame(update);
+  }
+
+  function gameOver() {
+    gameState.isRunning = false;
+    gameState.isGameOver = true;
+    gameOverMsg.classList.remove('hidden');
+    cancelAnimationFrame(gameLoopId);
+  }
+
+  // 键盘监听
+  document.addEventListener('keydown', (e) => {
+    if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyA') {
+      handleInput('jump');
+      // 视觉反馈
+      document.getElementById('btn-a').classList.add('active');
+    }
+  });
+
+  document.addEventListener('keyup', (e) => {
+    document.getElementById('btn-a').classList.remove('active');
+  });
+
+</script>
+</body>
+</html>
