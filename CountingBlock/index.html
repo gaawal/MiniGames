@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>积木数量 - 3D益智游戏</title>
+  <!-- 替换为Vue生产版本 -->
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#4F46E5',
+            secondary: '#10B981',
+            danger: '#EF4444',
+            dark: '#1F2937',
+            light: '#F3F4F6'
+          },
+          fontFamily: {
+            game: ['"Comic Sans MS"', '"Chalkboard SE"', 'sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+
+  <style type="text/tailwindcss">
+    @layer utilities {
+      .text-shadow {
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+      }
+      .glow {
+        box-shadow: 0 0 15px rgba(79, 70, 229, 0.5);
+      }
+      .rotate-slow {
+        animation: rotate 20s linear infinite;
+      }
+      @keyframes rotate {
+        from { transform: rotateY(0deg); }
+        to { transform: rotateY(360deg); }
+      }
+    }
+  </style>
+</head>
+<body class="bg-gradient-to-br from-purple-50 to-blue-50 min-h-screen font-game text-dark">
+<div id="app" class="max-w-4xl mx-auto px-4 py-8">
+  <!-- 游戏标题 -->
+  <div class="text-center mb-8">
+    <h1 class="text-[clamp(2rem,5vw,3.5rem)] font-bold text-primary text-shadow mb-2">
+      <i class="fa-solid fa-cubes mr-3 animate-bounce"></i>积木数量猜猜看
+    </h1>
+    <p class="text-gray-600 text-lg">观察3D积木，猜测总共有多少个！</p>
+  </div>
+
+  <!-- 游戏状态区 -->
+  <div class="flex justify-between items-center mb-8 flex-wrap gap-4">
+    <div class="bg-white p-3 rounded-xl shadow-md">
+      <span class="text-gray-600">当前得分: </span>
+      <span class="text-2xl font-bold text-primary">{{ score }}</span>
+    </div>
+
+    <div class="flex gap-2">
+      <span class="text-gray-600 self-center">难度: </span>
+      <button
+              v-for="(level, index) in DIFFICULTIES"
+              :key="index"
+              @click="selectDifficulty(level)"
+              :class="[
+            'px-4 py-2 rounded-lg transition-all duration-300 font-medium',
+            currentDifficulty === level
+              ? 'bg-primary text-white glow'
+              : 'bg-white text-gray-700 hover:bg-gray-100'
+          ]"
+      >
+        {{ level.name }}
+      </button>
+    </div>
+  </div>
+
+  <!-- 3D渲染区域 -->
+  <div class="relative bg-white rounded-2xl shadow-lg overflow-hidden mb-8 transform hover:scale-[1.01] transition-transform duration-300">
+    <div class="absolute top-3 left-3 bg-primary/90 text-white text-sm px-3 py-1 rounded-full backdrop-blur-sm">
+      <i class="fa-solid fa-lightbulb mr-1"></i>可旋转查看
+    </div>
+    <div id="scene-container" class="w-full h-[400px] md:h-[500px]"></div>
+  </div>
+
+  <!-- 猜测输入区域 -->
+  <div class="bg-white p-6 rounded-2xl shadow-lg mb-6">
+    <div class="flex flex-col md:flex-row gap-4 items-center">
+      <!-- 数字输入区域 -->
+      <div class="flex flex-wrap justify-center gap-2 mb-4 md:mb-0">
+        <button
+                v-for="num in [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]"
+                :key="num"
+                @click="addNumber(num)"
+                class="w-12 h-12 rounded-full bg-gray-200 text-gray-800 flex items-center justify-center text-xl font-bold hover:bg-primary hover:text-white transition-all transform hover:scale-110"
+        >
+          {{ num }}
+        </button>
+      </div>
+
+      <input
+              type="hidden"
+              v-model.number="userGuess"
+              class="hidden"
+      >
+
+      <button
+              @click="checkGuess"
+              class="px-8 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition-all transform hover:scale-105 focus:outline-none flex items-center gap-2"
+      >
+        <i class="fa-solid fa-paper-plane"></i>
+        <span>提交猜测</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- 提示信息 -->
+  <div v-if="message" class="rounded-xl p-4 text-center text-xl font-bold transition-all duration-500 transform">
+    <p :class="message.type === 'success' ? 'text-secondary' : 'text-danger'">
+      <i :class="message.type === 'success' ? 'fa-solid fa-check-circle mr-2' : 'fa-solid fa-exclamation-circle mr-2'"></i>
+      {{ message.content }}
+    </p>
+  </div>
+
+  <!-- 游戏指导 -->
+  <div class="mt-8 bg-white/70 backdrop-blur-sm p-4 rounded-xl text-sm text-gray-600">
+    <p><i class="fa-solid fa-info-circle mr-2 text-primary"></i>游戏说明：根据难度不同，积木会在立方体空间中随机生成。所有积木都是相连的，可以通过拖动鼠标旋转模型查看。猜对获得10分，猜错则显示正确答案。</p>
+  </div>
+</div>
+
+<script>
+  // 彩虹颜色数组
+  const RAINBOW_COLORS = [
+    0xFF5252, // 红
+    0xFF9800, // 橙
+    0xFFEB3B, // 黄
+    0x4CAF50, // 绿
+    0x2196F3, // 蓝
+    0x9C27B0, // 紫
+    0xFF4081  // 粉
+  ];
+
+  // 难度配置（从5*5*5开始，最少6个方块）
+  const DIFFICULTIES = [
+    { name: '简单', m: 5, minCount: 6, maxCount: 8 },  // 5x5x5 立方体
+    { name: '中等', m: 6, minCount: 8, maxCount: 12 },  // 6x6x6 立方体
+    { name: '困难', m: 7, minCount: 10, maxCount: 15 }  // 7x7x7 立方体
+  ];
+
+  const app = Vue.createApp({
+    data() {
+      return {
+        DIFFICULTIES,
+        currentDifficulty: DIFFICULTIES[0],
+        userGuess: null,
+        message: null,
+        score: 0,
+        blocks: [], // 积木坐标（非响应式对象）
+        m: 5,       // 当前立方体维度
+        targetCount: 0 // 目标积木数量
+      };
+    },
+
+    mounted() {
+      // 初始化Three.js（非响应式对象）
+      this.initThreeJS();
+      this.generateNewGame();
+      this.setupEventListeners();
+    },
+
+    methods: {
+      // 初始化Three.js（非响应式对象）
+      initThreeJS() {
+        const container = document.getElementById('scene-container');
+
+        // 核心对象（移出Vue响应式）
+        this.scene = new THREE.Scene();
+        this.camera = new THREE.PerspectiveCamera(60, container.clientWidth / container.clientHeight, 0.1, 1000);
+        this.renderer = new THREE.WebGLRenderer({ antialias: true });
+        this.raycaster = new THREE.Raycaster();
+        this.mouse = new THREE.Vector2();
+
+        // 场景配置
+        this.scene.background = new THREE.Color(0xffffff);
+
+        // 相机位置
+        this.camera.position.set(this.m * 1.5, this.m * 1.5, this.m * 1.5);
+        this.camera.lookAt(this.m/2 - 0.5, this.m/2 - 0.5, this.m/2 - 0.5);
+
+        // 渲染器配置
+        this.renderer.setSize(container.clientWidth, container.clientHeight);
+        this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        container.appendChild(this.renderer.domElement);
+
+        // 灯光
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+        this.scene.add(ambientLight);
+
+        const directionalLight1 = new THREE.DirectionalLight(0xffffff, 0.8);
+        directionalLight1.position.set(1, 1, 1);
+        this.scene.add(directionalLight1);
+
+        const directionalLight2 = new THREE.DirectionalLight(0xffffff, 0.5);
+        directionalLight2.position.set(-1, -1, -1);
+        this.scene.add(directionalLight2);
+
+        // 渲染循环（非响应式）
+        this.renderLoop = () => {
+          requestAnimationFrame(this.renderLoop);
+          this.renderer.render(this.scene, this.camera);
+        };
+        this.renderLoop();
+      },
+
+      // 设置事件监听（处理passive警告）
+      setupEventListeners() {
+        const container = document.getElementById('scene-container');
+        let isDragging = false;
+        let previousMouse = { x: 0, y: 0 };
+
+        // 鼠标事件
+        container.addEventListener('mousedown', (e) => {
+          isDragging = true;
+          previousMouse = { x: e.clientX, y: e.clientY };
+        });
+
+        window.addEventListener('mousemove', (e) => {
+          if (!isDragging) return;
+          const deltaX = e.clientX - previousMouse.x;
+          const deltaY = e.clientY - previousMouse.y;
+          this.scene.rotation.y += deltaX * 0.005;
+          this.scene.rotation.x += deltaY * 0.005;
+          this.scene.rotation.x = Math.max(-Math.PI/2, Math.min(Math.PI/2, this.scene.rotation.x));
+          previousMouse = { x: e.clientX, y: e.clientY };
+        });
+
+        window.addEventListener('mouseup', () => isDragging = false);
+
+        // 触摸事件（添加passive选项）
+        container.addEventListener('touchstart', (e) => {
+          isDragging = true;
+          previousMouse = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+        }, { passive: true }); // 无preventDefault，设为passive
+
+        window.addEventListener('touchmove', (e) => {
+          if (!isDragging) return;
+          const deltaX = e.touches[0].clientX - previousMouse.x;
+          const deltaY = e.touches[0].clientY - previousMouse.y;
+          this.scene.rotation.y += deltaX * 0.005;
+          this.scene.rotation.x += deltaY * 0.005;
+          this.scene.rotation.x = Math.max(-Math.PI/2, Math.min(Math.PI/2, this.scene.rotation.x));
+          previousMouse = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+          e.preventDefault(); // 阻止默认滚动
+        }, { passive: false }); // 有preventDefault，设为false
+
+        window.addEventListener('touchend', () => isDragging = false, { passive: true });
+
+        // 窗口resize
+        window.addEventListener('resize', () => {
+          const container = document.getElementById('scene-container');
+          this.camera.aspect = container.clientWidth / container.clientHeight;
+          this.camera.updateProjectionMatrix();
+          this.renderer.setSize(container.clientWidth, container.clientHeight);
+        });
+      },
+
+      // 选择难度
+      selectDifficulty(level) {
+        this.currentDifficulty = level;
+        this.m = level.m;
+        this.generateNewGame();
+        // 调整相机位置
+        this.camera.position.set(this.m * 1.5, this.m * 1.5, this.m * 1.5);
+        this.camera.lookAt(this.m/2 - 0.5, this.m/2 - 0.5, this.m/2 - 0.5);
+      },
+
+      // 生成新游戏
+      generateNewGame() {
+        // 随机目标数量
+        this.targetCount = Math.floor(
+                Math.random() * (this.currentDifficulty.maxCount - this.currentDifficulty.minCount + 1)
+        ) + this.currentDifficulty.minCount;
+
+        // 生成相连积木
+        try {
+          this.blocks = this.generateConnectedBlocks(this.currentDifficulty.m, this.targetCount);
+        } catch (error) {
+          console.error('生成积木失败:', error);
+          this.message = { type: 'error', content: '生成积木失败，请重试' };
+          setTimeout(() => this.generateNewGame(), 1000);
+          return;
+        }
+
+        // 确保至少2层高度
+        const zCoords = this.blocks.map(b => b.z);
+        const minZ = Math.min(...zCoords);
+        const maxZ = Math.max(...zCoords);
+        const height = maxZ - minZ + 1;
+        if (height < 2) {
+          this.generateNewGame();
+          return;
+        }
+
+        // 确保总体方块数量至少6个
+        if (this.blocks.length < 6) {
+          this.generateNewGame();
+          return;
+        }
+
+        // 确保立方体空间比生成的方块空间大3
+        const cubeSize = this.currentDifficulty.m + 3;
+        this.m = cubeSize; // 确保场景大小
+
+        // 调整相机位置
+        this.camera.position.set(this.m * 1.5, this.m * 1.5, this.m * 1.5);
+        this.camera.lookAt(this.m/2 - 0.5, this.m/2 - 0.5, this.m/2 - 0.5);
+
+        // 渲染积木（清空场景）
+        this.renderBlocks();
+
+        // 重置状态
+        this.userGuess = null;
+        this.message = null;
+      },
+
+      // 生成相连积木（生长法）
+      generateConnectedBlocks(m, targetCount) {
+        const blocks = new Set();
+        const start = `${Math.floor(Math.random()*m)},${Math.floor(Math.random()*m)},${Math.floor(Math.random()*m)}`;
+        blocks.add(start);
+
+        // 待扩展的相邻格子
+        const candidates = new Set(this.getAdjacent(start, m));
+
+        while (blocks.size < targetCount) {
+          if (candidates.size === 0) throw new Error('无法生成足够相连积木');
+          const [coord] = Array.from(candidates).sort(() => Math.random() - 0.5);
+          blocks.add(coord);
+          candidates.delete(coord);
+          this.getAdjacent(coord, m).forEach(c => {
+            if (!blocks.has(c) && !candidates.has(c)) candidates.add(c);
+          });
+        }
+
+        // 转换为坐标对象
+        return Array.from(blocks).map(coord => {
+          const [x, y, z] = coord.split(',').map(Number);
+          return { x, y, z };
+        });
+      },
+
+      // 获取相邻格子（坐标字符串）
+      getAdjacent(coord, m) {
+        const [x, y, z] = coord.split(',').map(Number);
+        const dirs = [[1,0,0], [-1,0,0], [0,1,0], [0,-1,0], [0,0,1], [0,0,-1]];
+        return dirs.map(([dx, dy, dz]) => {
+          const nx = x + dx;
+          const ny = y + dy;
+          const nz = z + dz;
+          if (nx >=0 && nx < m && ny >=0 && ny < m && nz >=0 && nz < m) {
+            return `${nx},${ny},${nz}`;
+          }
+        }).filter(Boolean);
+      },
+
+      // 渲染积木（清空场景并重新绘制）
+      renderBlocks() {
+        // 清空场景（保留灯光）
+        this.scene.children = this.scene.children.filter(child =>
+                child.type === 'AmbientLight' || child.type === 'DirectionalLight'
+        );
+
+        // 绘制立方体边框
+        const edgeGeo = new THREE.EdgesGeometry(new THREE.BoxGeometry(this.m, this.m, this.m));
+        const edgeMat = new THREE.LineBasicMaterial({ color: 0xcccccc });
+        const edge = new THREE.LineSegments(edgeGeo, edgeMat);
+        edge.position.set(this.m/2 - 0.5, this.m/2 - 0.5, this.m/2 - 0.5);
+        this.scene.add(edge);
+
+        // 绘制积木
+        const size = 1.0; // 积木大小（没有间隙）
+        this.blocks.forEach(block => {
+          const geo = new THREE.BoxGeometry(size, size, size);
+          const color = RAINBOW_COLORS[Math.floor(Math.random() * RAINBOW_COLORS.length)];
+          const mat = new THREE.MeshStandardMaterial({
+            color,
+            roughness: 0.5,
+            metalness: 0.2
+          });
+
+          // 添加描边
+          const edgeGeo = new THREE.EdgesGeometry(geo);
+          const edgeMat = new THREE.LineBasicMaterial({ color: 0x000000, linewidth: 1.5 });
+          const edgeMesh = new THREE.LineSegments(edgeGeo, edgeMat);
+
+          const cube = new THREE.Mesh(geo, mat);
+          cube.position.set(block.x, block.y, block.z);
+          cube.add(edgeMesh);
+
+          this.scene.add(cube);
+        });
+      },
+
+      // 添加数字
+      addNumber(num) {
+        if (this.userGuess === null) {
+          this.userGuess = num;
+        } else {
+          this.userGuess = this.userGuess * 10 + num;
+        }
+      },
+
+      // 检查猜测
+      checkGuess() {
+        if (this.userGuess == null || this.userGuess < 1) {
+          this.message = { type: 'error', content: '请输入有效数量！' };
+          return;
+        }
+
+        if (this.userGuess === this.targetCount) {
+          this.score += 10;
+          this.message = { type: 'success', content: `🎉 猜对了！积木数量是 ${this.targetCount}，获得 10 分！` };
+          setTimeout(() => this.generateNewGame(), 2000);
+        } else {
+          this.message = { type: 'error', content: `❌ 猜错了！正确数量是 ${this.targetCount}，再接再厉！` };
+        }
+      }
+    }
+  });
+
+  app.mount('#app');
+</script>
+</body>
+</html>
