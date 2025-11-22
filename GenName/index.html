@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>寻名探源 - 中文名字生成器</title>
+  <!-- 引入 Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- 引入 Inter 字体 -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #f7f9fc;
+    }
+    .container-card {
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    }
+    .trait-checkbox:checked + .trait-label {
+      background-color: #3b82f6; /* Blue 500 */
+      color: white;
+      border-color: #3b82f6;
+    }
+    /* Custom scrollbar for mobile */
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #d1d5db;
+      border-radius: 10px;
+    }
+  </style>
+</head>
+<body class="min-h-screen p-4 sm:p-6 flex items-center justify-center">
+
+<div class="w-full max-w-4xl bg-white rounded-xl p-6 md:p-10 container-card">
+
+  <h1 class="text-3xl font-bold text-center text-gray-800 mb-2">寻名探源</h1>
+  <p class="text-center text-gray-500 mb-8">根据您的偏好，AI 智能生成中文名字</p>
+
+  <!-- 输入表单区域 -->
+  <div id="input-form" class="space-y-6">
+
+    <!-- 1. 姓氏输入 -->
+    <div>
+      <label for="surname" class="block text-sm font-medium text-gray-700 mb-1">您的姓氏 (必填)</label>
+      <input type="text" id="surname" placeholder="例如：李" value="李"
+             class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-lg font-semibold text-center uppercase tracking-widest">
+    </div>
+
+    <!-- 2. 名字长度 -->
+    <div>
+      <label class="block text-sm font-medium text-gray-700 mb-2">名字长度</label>
+      <div class="flex space-x-4">
+        <label class="flex items-center cursor-pointer">
+          <input type="radio" name="name-length" value="两字名 (单名)" checked class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300">
+          <span class="ml-2 text-gray-700">两字名 (单名)</span>
+        </label>
+        <label class="flex items-center cursor-pointer">
+          <input type="radio" name="name-length" value="三字名 (双名)" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300">
+          <span class="ml-2 text-gray-700">三字名 (双名)</span>
+        </label>
+      </div>
+    </div>
+
+    <!-- 3. 性别偏好 -->
+    <div>
+      <label class="block text-sm font-medium text-gray-700 mb-2">性别偏好</label>
+      <div class="flex space-x-4">
+        <label class="flex items-center cursor-pointer">
+          <input type="radio" name="gender-preference" value="男性 (阳刚、大气)" checked class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300">
+          <span class="ml-2 text-gray-700">男性</span>
+        </label>
+        <label class="flex items-center cursor-pointer">
+          <input type="radio" name="gender-preference" value="女性 (柔美、典雅)" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300">
+          <span class="ml-2 text-gray-700">女性</span>
+        </label>
+        <label class="flex items-center cursor-pointer">
+          <input type="radio" name="gender-preference" value="中性 (中正、平和)" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300">
+          <span class="ml-2 text-gray-700">中性</span>
+        </label>
+      </div>
+    </div>
+
+    <!-- 4. 期望性格/寓意 -->
+    <div>
+      <label class="block text-sm font-medium text-gray-700 mb-2">期望性格/寓意 (可多选)</label>
+      <div id="trait-options" class="flex flex-wrap gap-2">
+        <!-- Checkboxes will be populated by JS -->
+      </div>
+    </div>
+
+    <!-- 5. 补充要求 (例如五行、辈分、排除词) -->
+    <div>
+      <label for="additional-requirements" class="block text-sm font-medium text-gray-700 mb-1">补充要求 (例如：五行缺水，需用木字旁的字，或排除的字)</label>
+      <textarea id="additional-requirements" rows="2" placeholder="例如：名字中最好包含‘木’属性的字；请避免使用‘伟’字。"
+                class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"></textarea>
+    </div>
+
+    <!-- 生成按钮 -->
+    <button id="generate-button" onclick="handleGenerateName()"
+            class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl transition duration-150 ease-in-out shadow-lg transform hover:scale-[1.01] focus:outline-none focus:ring-4 focus:ring-blue-500 focus:ring-opacity-50">
+      🚀 智能生成名字
+    </button>
+    <div id="error-message" class="text-red-500 text-center mt-3 hidden p-2 bg-red-100 rounded-lg"></div>
+  </div>
+
+  <!-- 结果展示区域 -->
+  <div id="results-container" class="mt-10 hidden">
+    <h2 class="text-2xl font-bold text-gray-800 mb-5 border-b pb-2">推荐名字列表</h2>
+    <div id="name-results" class="space-y-4">
+      <!-- Name cards will be inserted here -->
+    </div>
+    <button onclick="handleGenerateName(true)"
+            class="mt-6 w-full bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold py-3 rounded-xl transition duration-150 ease-in-out">
+      🔄 重新生成 (获取更多选择)
+    </button>
+  </div>
+
+  <!-- 加载指示器 -->
+  <div id="loading-spinner" class="mt-10 text-center hidden">
+    <div class="flex items-center justify-center space-x-2">
+      <svg class="animate-spin h-6 w-6 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+      </svg>
+      <span class="text-lg text-blue-600 font-medium">AI 正在为您精心挑选名字...</span>
+    </div>
+    <p class="text-sm text-gray-500 mt-2">这可能需要几秒钟，请耐心等待。</p>
+  </div>
+
+</div>
+
+<script>
+  // --- API Configuration and Utility Functions ---
+
+  const MODEL_NAME = "gemini-2.5-flash-preview-09-2025";
+  const API_BASE_URL = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_NAME}:generateContent`;
+  const API_KEY = ""; // Canvas will automatically provide the API key at runtime
+
+  /**
+   * Converts the traits object into HTML checkboxes and inserts them into the DOM.
+   */
+  function populateTraits() {
+    const traits = [
+      { label: "智慧", value: "智慧, 聪明, 睿智" },
+      { label: "沉稳", value: "沉稳, 内敛, 内涵" },
+      { label: "开朗", value: "开朗, 乐观, 活泼" },
+      { label: "财富", value: "财富, 富足, 繁荣" },
+      { label: "健康", value: "健康, 长寿, 安康" },
+      { label: "勇气", value: "勇气, 坚毅, 勇敢" },
+      { label: "优雅", value: "优雅, 气质, 柔美" },
+      { label: "诚信", value: "诚信, 善良, 品德" },
+      { label: "光明", value: "光明, 希望, 前途" },
+      { label: "创新", value: "创新, 独特, 新颖" }
+    ];
+
+    const container = document.getElementById('trait-options');
+    traits.forEach((trait, index) => {
+      const isChecked = index < 3; // Default select the first three for easier testing
+
+      container.innerHTML += `
+                    <input type="checkbox" id="trait-${index}" value="${trait.value}" class="hidden trait-checkbox" ${isChecked ? 'checked' : ''}>
+                    <label for="trait-${index}" class="trait-label px-3 py-1 text-sm font-medium border border-gray-300 rounded-full cursor-pointer select-none transition duration-150 ease-in-out hover:bg-gray-100 ${isChecked ? 'bg-blue-500 text-white' : 'text-gray-700 bg-white'}">
+                        ${trait.label}
+                    </label>
+                `;
+    });
+
+    // Reattach event listeners for dynamic styling
+    document.querySelectorAll('.trait-checkbox').forEach(checkbox => {
+      checkbox.addEventListener('change', (e) => {
+        const label = e.target.nextElementSibling;
+        if (e.target.checked) {
+          label.classList.remove('bg-white', 'text-gray-700', 'hover:bg-gray-100');
+          label.classList.add('bg-blue-500', 'text-white');
+        } else {
+          label.classList.remove('bg-blue-500', 'text-white');
+          label.classList.add('bg-white', 'text-gray-700', 'hover:bg-gray-100');
+        }
+      });
+    });
+  }
+
+  /**
+   * Handles the click event for name generation.
+   * @param {boolean} isRetry - Whether this is a retry/refresh call.
+   */
+  async function handleGenerateName(isRetry = false) {
+    const surname = document.getElementById('surname').value.trim();
+    const length = document.querySelector('input[name="name-length"]:checked').value;
+    const gender = document.querySelector('input[name="gender-preference"]:checked').value;
+    const additional = document.getElementById('additional-requirements').value.trim();
+
+    if (!surname) {
+      displayError("请输入您的姓氏！");
+      return;
+    }
+
+    const selectedTraits = Array.from(document.querySelectorAll('.trait-checkbox:checked'))
+            .map(cb => cb.value)
+            .join(', ');
+
+    const traitString = selectedTraits ? `名字应包含以下寓意和性格特征：${selectedTraits}。` : '名字应积极、美好、寓意深远。';
+
+    // Construct the main user query
+    const userQuery = `请为我生成 5 个中文名字。我的姓氏是 "${surname}"。名字长度要求是 ${length}。性别偏好是 ${gender}。${traitString}。以下是额外的要求或排除项（如无则忽略）：${additional || '无'}`;
+
+    const systemPrompt = "你是一位专业的中文姓名学专家和起名大师。你的任务是根据用户提供的姓氏、长度和偏好，生成 5 个独特、寓意吉利、音律和谐的中文名字。生成结果必须严格遵循提供的 JSON Schema 格式。每个名字都需要包含用户提供的姓氏。";
+
+    // Structured JSON Schema for the 'API' response
+    const responseSchema = {
+      type: "ARRAY",
+      items: {
+        type: "OBJECT",
+        properties: {
+          "name": { "type": "STRING", description: "The complete generated Chinese name including the surname, e.g., 李子涵." },
+          "meaning": { "type": "STRING", description: "A concise summary of the name's auspicious meaning, e.g., 意指智慧、沉稳、心胸宽广." },
+          "analysis": { "type": "STRING", description: "A detailed analysis covering character traits, sound harmony, and gender suitability, e.g., 哲字显智慧，涵字显内涵与水属性，整体音律和谐，大气." }
+        },
+        required: ["name", "meaning", "analysis"]
+      }
+    };
+
+    // Hide previous results/error, show loading
+    document.getElementById('results-container').classList.add('hidden');
+    document.getElementById('error-message').classList.add('hidden');
+    document.getElementById('loading-spinner').classList.remove('hidden');
+    document.getElementById('generate-button').disabled = true;
+
+    try {
+      const responseJson = await callGeminiAPI(userQuery, systemPrompt, responseSchema);
+      renderResults(responseJson);
+    } catch (error) {
+      console.error("Name generation failed:", error);
+      displayError("名字生成失败，请检查网络或稍后重试。");
+    } finally {
+      // Hide loading, enable button
+      document.getElementById('loading-spinner').classList.add('hidden');
+      document.getElementById('generate-button').disabled = false;
+    }
+  }
+
+  /**
+   * Calls the Gemini API with structured output configuration.
+   * Implements exponential backoff for robustness.
+   * @param {string} userQuery - The main prompt from the user inputs.
+   * @param {string} systemPrompt - The system instruction for the model.
+   * @param {object} schema - The required JSON schema.
+   * @returns {Promise<Array>} The parsed JSON response from the model.
+   */
+  async function callGeminiAPI(userQuery, systemPrompt, schema) {
+    const payload = {
+      contents: [{ parts: [{ text: userQuery }] }],
+      systemInstruction: { parts: [{ text: systemPrompt }] },
+      generationConfig: {
+        responseMimeType: "application/json",
+        responseSchema: schema
+      }
+    };
+
+    const maxRetries = 5;
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      const delay = Math.pow(2, attempt) * 1000; // 1s, 2s, 4s, 8s, 16s
+
+      try {
+        const response = await fetch(`${API_BASE_URL}?key=${API_KEY}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        if (response.status === 429 && attempt < maxRetries - 1) {
+          // Too many requests, wait and retry (handled silently by the loop)
+          await new Promise(resolve => setTimeout(resolve, delay));
+          continue;
+        }
+
+        if (!response.ok) {
+          const errorBody = await response.text();
+          throw new Error(`API call failed with status ${response.status}: ${errorBody}`);
+        }
+
+        const result = await response.json();
+
+        if (result.candidates && result.candidates.length > 0 &&
+                result.candidates[0].content && result.candidates[0].content.parts &&
+                result.candidates[0].content.parts.length > 0) {
+
+          const jsonText = result.candidates[0].content.parts[0].text;
+          return JSON.parse(jsonText);
+
+        } else {
+          throw new Error("Invalid response structure from API.");
+        }
+
+      } catch (error) {
+        if (attempt === maxRetries - 1) {
+          throw error;
+        }
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
+  }
+
+  /**
+   * Renders the name results onto the page.
+   * @param {Array<Object>} names - The array of generated name objects.
+   */
+  function renderResults(names) {
+    const resultsContainer = document.getElementById('name-results');
+    resultsContainer.innerHTML = ''; // Clear previous results
+
+    if (!names || names.length === 0) {
+      displayError("未能生成任何符合条件的名字，请尝试调整您的偏好设置。");
+      return;
+    }
+
+    names.forEach((item, index) => {
+      const nameCard = `
+                    <div class="bg-gradient-to-r from-blue-50 to-indigo-50 p-5 rounded-xl border-l-4 border-blue-600 shadow-md">
+                        <div class="flex items-center mb-3">
+                            <span class="text-3xl font-extrabold text-blue-800">${index + 1}. ${item.name}</span>
+                            <span class="ml-4 px-3 py-1 text-xs font-semibold rounded-full bg-blue-200 text-blue-800">${item.name.length === 3 ? '三字名 (双名)' : '两字名 (单名)'}</span>
+                        </div>
+
+                        <div class="space-y-2">
+                            <p class="text-gray-700">
+                                <span class="font-bold text-gray-900">核心寓意:</span> ${item.meaning}
+                            </p>
+                            <p class="text-sm text-gray-600 border-t pt-2 mt-2">
+                                <span class="font-bold text-gray-900">专家分析:</span> ${item.analysis}
+                            </p>
+                        </div>
+                    </div>
+                `;
+      resultsContainer.innerHTML += nameCard;
+    });
+
+    document.getElementById('results-container').classList.remove('hidden');
+  }
+
+  /**
+   * Displays an error message on the page.
+   * @param {string} message - The error message to display.
+   */
+  function displayError(message) {
+    const errorElement = document.getElementById('error-message');
+    errorElement.textContent = message;
+    errorElement.classList.remove('hidden');
+  }
+
+  // Initialize the trait options on load
+  populateTraits();
+</script>
+</body>
+</html>
