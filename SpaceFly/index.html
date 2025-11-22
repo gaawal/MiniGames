@@ -1,0 +1,1031 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>星渊粒子 | Star Abyss: Mobile UX Pro</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      background-color: #000;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: none; /* 禁用默认触摸行为 */
+    }
+
+    #game-container {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 1;
+    }
+
+    /* UI 层 */
+    #ui-layer {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 10;
+      pointer-events: none; /* 允许点击穿透，除非是菜单 */
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .hud-top {
+      display: flex;
+      justify-content: space-between;
+      padding: 20px;
+      color: #00ffff;
+      text-shadow: 0 0 10px #00ffff;
+      font-weight: bold;
+      font-size: 18px;
+      letter-spacing: 2px;
+    }
+
+    .health-bar-frame {
+      width: 200px;
+      height: 12px;
+      border: 2px solid #ff0055;
+      border-radius: 6px;
+      overflow: hidden;
+      background: rgba(0,0,0,0.5);
+      margin-top: 5px;
+    }
+
+    .health-bar-fill {
+      width: 100%;
+      height: 100%;
+      background-color: #ff0055;
+      box-shadow: 0 0 15px #ff0055;
+      transition: width 0.2s ease-out;
+    }
+
+    /* 武器等级指示器 */
+    .weapon-indicator {
+      margin-top: 5px;
+      display: flex;
+      gap: 5px;
+    }
+    .weapon-pip {
+      width: 20px;
+      height: 6px;
+      background: #333;
+      border: 1px solid #555;
+    }
+    .weapon-pip.active {
+      background: #00ffff;
+      box-shadow: 0 0 5px #00ffff;
+    }
+
+    /* 提示信息 */
+    .message-overlay {
+      position: absolute;
+      top: 20%;
+      width: 100%;
+      text-align: center;
+      font-size: 24px;
+      color: #fff;
+      font-weight: bold;
+      text-shadow: 0 0 10px #fff;
+      opacity: 0;
+      transition: opacity 0.5s;
+    }
+
+    /* 控制提示区 */
+    .control-zone-hint {
+      position: absolute;
+      bottom: 20px;
+      width: 40%;
+      height: 100px;
+      border: 2px dashed rgba(0, 255, 255, 0.2);
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: rgba(0, 255, 255, 0.5);
+      font-size: 14px;
+      pointer-events: none;
+      transition: opacity 2s;
+    }
+    #left-zone { left: 20px; }
+    #right-zone { right: 20px; border-color: rgba(255, 0, 85, 0.2); color: rgba(255, 0, 85, 0.5); }
+
+    /* 菜单 */
+    .menu-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.85);
+      backdrop-filter: blur(8px);
+      z-index: 20;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      pointer-events: auto;
+      transition: opacity 0.5s;
+    }
+
+    .hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    h1 {
+      color: #fff;
+      font-size: 3rem;
+      margin-bottom: 0.5rem;
+      text-transform: uppercase;
+      background: linear-gradient(to right, #00ffff, #ff00ff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: glow 2s infinite alternate;
+    }
+
+    p.subtitle {
+      color: #aaa;
+      font-size: 1rem;
+      margin-bottom: 2rem;
+      text-align: center;
+      line-height: 1.5;
+      max-width: 80%;
+    }
+
+    .btn {
+      background: transparent;
+      border: 2px solid #00ffff;
+      color: #00ffff;
+      padding: 15px 40px;
+      font-size: 1.2rem;
+      text-transform: uppercase;
+      cursor: pointer;
+      border-radius: 30px;
+      box-shadow: 0 0 15px rgba(0, 255, 255, 0.3);
+      transition: all 0.3s;
+      font-weight: bold;
+    }
+
+    .btn:hover {
+      background: #00ffff;
+      color: #000;
+      box-shadow: 0 0 30px rgba(0, 255, 255, 0.8);
+    }
+
+    .warning-text {
+      color: #ff0055;
+      font-size: 2rem;
+      font-weight: bold;
+      text-shadow: 0 0 20px #ff0055;
+      display: none;
+    }
+
+    #orientation-lock {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: #000;
+      z-index: 9999;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      text-align: center;
+    }
+
+    @media screen and (orientation: portrait) {
+      #orientation-lock { display: flex; }
+    }
+
+    @keyframes glow {
+      from { text-shadow: 0 0 10px #00ffff; }
+      to { text-shadow: 0 0 30px #ff00ff, 0 0 10px #fff; }
+    }
+  </style>
+</head>
+<body>
+
+<div id="orientation-lock">
+  <div style="font-size: 50px; margin-bottom: 20px;">↻</div>
+  <p>请旋转手机至横屏模式<br>Please Rotate Device</p>
+</div>
+
+<div id="game-container"></div>
+
+<div id="ui-layer">
+  <div class="hud-top">
+    <div>
+      <div id="score-display">分数: 0</div>
+      <div class="weapon-indicator">
+        <div id="wp-1" class="weapon-pip active"></div>
+        <div id="wp-2" class="weapon-pip"></div>
+        <div id="wp-3" class="weapon-pip"></div>
+        <div id="wp-4" class="weapon-pip"></div>
+      </div>
+    </div>
+    <div>
+      <div style="font-size: 12px; text-align:right; margin-bottom:5px;">护盾完整度</div>
+      <div class="health-bar-frame"><div id="hp-bar" class="health-bar-fill"></div></div>
+    </div>
+  </div>
+
+  <div id="boss-warning" class="warning-text" style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%);">警告: 巨型目标接近</div>
+  <div id="msg-overlay" class="message-overlay">武器升级!</div>
+
+  <div id="left-zone" class="control-zone-hint"><span>左侧区域滑动（相对移动）</span></div>
+  <div id="right-zone" class="control-zone-hint"><span>按住右侧区域射击</span></div>
+</div>
+
+<div id="start-screen" class="menu-overlay">
+  <h1>星渊粒子</h1>
+  <p class="subtitle">
+    <span style="color:#00ffff;">左侧滑动</span> 移动 (相对控制，不遮挡飞船) &nbsp;|&nbsp; <span style="color:#ff0055;">右侧按住</span> 射击<br>
+    <span style="color:#ff00ff; font-size: small;">（请点击按钮以启动浏览器音频权限）</span>
+  </p>
+  <button class="btn" id="start-btn">启动引擎 / INITIALIZE</button>
+</div>
+
+<div id="game-over-screen" class="menu-overlay hidden">
+  <h1 style="color: #ff0055; -webkit-text-fill-color: #ff0055;">任务失败</h1>
+  <p class="subtitle" id="final-score">最终分数: 0</p>
+  <button class="btn" id="restart-btn">系统重启 / REBOOT</button>
+</div>
+
+<script type="importmap">
+        {
+            "imports": {
+                "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+
+<script type="module">
+  import * as THREE from 'three';
+  import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+  import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+  import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+
+  // --- 8-Bit 音效引擎 (Web Audio API) ---
+  const AudioEngine = {
+    ctx: null,
+    musicOsc: null,
+    init: function() {
+      window.AudioContext = window.AudioContext || window.webkitAudioContext;
+      try {
+        this.ctx = new AudioContext();
+        console.log("AudioContext initialized.");
+      } catch (e) {
+        console.error("Web Audio API is not supported in this browser.", e);
+      }
+    },
+    playMusic: function() {
+      if (!this.ctx || this.musicOsc) return;
+
+      // 简单的8-bit循环背景音 (C Maj Arpeggio)
+      this.musicOsc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      this.musicOsc.type = 'sawtooth'; // 锯齿波
+
+      const baseFreq = 65.4;
+      const pattern = [0, 4, 7, 12];
+      let noteIndex = 0;
+
+      const changeNote = () => {
+        if (!this.musicOsc) return;
+        const freq = baseFreq * Math.pow(2, pattern[noteIndex] / 12);
+        this.musicOsc.frequency.setValueAtTime(freq * 4, this.ctx.currentTime);
+        noteIndex = (noteIndex + 1) % pattern.length;
+      };
+
+      changeNote();
+      setInterval(changeNote, 500);
+
+      gain.gain.setValueAtTime(0.015, this.ctx.currentTime);
+      this.musicOsc.connect(gain);
+      gain.connect(this.ctx.destination);
+
+      this.musicOsc.start(0);
+    },
+    stopMusic: function() {
+      if (this.musicOsc) {
+        this.musicOsc.stop();
+        this.musicOsc = null;
+      }
+    },
+    playTone: function(freq, type, duration, vol=0.1) {
+      if (!this.ctx || this.ctx.state !== 'running') return;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = type;
+      osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+      gain.gain.setValueAtTime(vol, this.ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + duration);
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start();
+      osc.stop(this.ctx.currentTime + duration);
+    },
+    shoot: function() {
+      if (!this.ctx || this.ctx.state !== 'running') return;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'square';
+      osc.frequency.setValueAtTime(800, this.ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(600, this.ctx.currentTime + 0.05);
+      gain.gain.setValueAtTime(0.05, this.ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.1);
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start();
+      osc.stop(this.ctx.currentTime + 0.1);
+    },
+    explode: function() {
+      if (!this.ctx || this.ctx.state !== 'running') return;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(120, this.ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(10, this.ctx.currentTime + 0.4);
+      gain.gain.setValueAtTime(0.2, this.ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.4);
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start();
+      osc.stop(this.ctx.currentTime + 0.4);
+    },
+    powerUp: function() {
+      if (!this.ctx || this.ctx.state !== 'running') return;
+      this.playTone(440, 'square', 0.1, 0.1);
+      setTimeout(() => this.playTone(554, 'square', 0.1, 0.1), 100);
+      setTimeout(() => this.playTone(659, 'square', 0.2, 0.1), 200);
+    },
+    healthUp: function() {
+      if (!this.ctx || this.ctx.state !== 'running') return;
+      this.playTone(587, 'sine', 0.1, 0.1);
+      setTimeout(() => this.playTone(1174, 'sine', 0.2, 0.1), 100);
+    },
+    hit: function() {
+      if (!this.ctx || this.ctx.state !== 'running') return;
+      this.playTone(150, 'sawtooth', 0.15, 0.15);
+    }
+  };
+
+  // --- 游戏配置 ---
+  const CONFIG = {
+    playerLerp: 0.15,
+    fireRate: 8,
+    colors: {
+      player: 0x00ffff,
+      bullet: 0xffff00,
+      enemy: 0xff0055,
+      obstacle: 0xaa00ff,
+      star: 0xffffff,
+      powerupWeapon: 0x00ffff,
+      powerupHealth: 0x00ff00,
+      hitFlash: 0xffffff
+    },
+    bossThreshold: 3000,
+    spawnDistance: -120,
+    despawnDistance: 20
+  };
+
+  let scene, camera, renderer, composer, worldGroup;
+  let player, particles, starGeo;
+  let bullets = [];
+  let enemies = [];
+  let explosions = [];
+  let powerups = [];
+  let boss = null;
+  let originalBossMaterial = null;
+
+  // 玩家输入和状态
+  let input = {
+    targetX: 0, targetY: -2, isFiring: false, touchIdMove: null,
+    relativeOffsetX: 0, relativeOffsetY: 0, // 新增：相对控制偏移量
+    isMoving: false
+  };
+  let gameState = { active: false, score: 0, hp: 100, weaponLevel: 1, frameCount: 0, bossActive: false };
+
+  // --- 坐标转换工具 ---
+  /**
+   * 将屏幕坐标 (clientX, clientY) 转换为 Three.js 世界坐标 (Z=0 平面).
+   * @param {number} clientX
+   * @param {number} clientY
+   * @returns {{worldX: number, worldY: number}}
+   */
+  function calculateWorldCoords(clientX, clientY) {
+    const vector = new THREE.Vector3(
+            (clientX / window.innerWidth) * 2 - 1,
+            -(clientY / window.innerHeight) * 2 + 1,
+            0.5 // Z in NDC
+    );
+    vector.unproject(camera);
+
+    // 摄像机在 Z=10，飞船在 Z=0。计算 Z=0 平面上的交点。
+    const t = 10 / (10 - vector.z); // t = Camera.z / (Camera.z - vector.z)
+
+    const worldX = camera.position.x + t * (vector.x - camera.position.x);
+    const worldY = camera.position.y + t * (vector.y - camera.position.y);
+
+    return { worldX, worldY };
+  }
+
+  /**
+   * 获取飞船在 Z=0 平面上可以移动的边界。
+   * @returns {{minX: number, maxX: number, minY: number, maxY: number}}
+   */
+  function getPlayerBounds() {
+    const distanceToPlayer = 10;
+    const fov = camera.fov * (Math.PI / 180);
+
+    const halfHeight = distanceToPlayer * Math.tan(fov / 2);
+    const halfWidth = halfHeight * camera.aspect;
+
+    // 使用 95% 的边界以确保飞船完全在视锥体内部
+    const paddingFactor = 0.95;
+
+    return {
+      minX: -halfWidth * paddingFactor,
+      maxX: halfWidth * paddingFactor,
+      minY: -halfHeight * paddingFactor,
+      maxY: halfHeight * paddingFactor
+    };
+  }
+
+  // --- 初始化 ---
+  function init() {
+    const container = document.getElementById('game-container');
+    scene = new THREE.Scene();
+    scene.fog = new THREE.FogExp2(0x000000, 0.015);
+
+    worldGroup = new THREE.Group();
+    scene.add(worldGroup);
+
+    camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+    camera.position.set(0, 3, 10);
+    camera.lookAt(0, 0, -50);
+
+    renderer = new THREE.WebGLRenderer({ antialias: false });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.toneMapping = THREE.ReinhardToneMapping;
+    container.appendChild(renderer.domElement);
+
+    const renderScene = new RenderPass(scene, camera);
+    const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.1);
+    composer = new EffectComposer(renderer);
+    composer.addPass(renderScene);
+    composer.addPass(bloomPass);
+
+    createPlayer();
+    createStarfield();
+
+    window.addEventListener('resize', onWindowResize);
+
+    // 绑定触摸事件
+    const touchZone = document.getElementById('ui-layer');
+    touchZone.style.pointerEvents = 'auto';
+    touchZone.addEventListener('touchstart', handleTouchStart, {passive: false});
+    touchZone.addEventListener('touchmove', handleTouchMove, {passive: false});
+    touchZone.addEventListener('touchend', handleTouchEnd, {passive: false});
+
+    // 绑定鼠标事件 (桌面测试用)
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mousedown', () => input.isFiring = true);
+    document.addEventListener('mouseup', () => input.isFiring = false);
+
+    document.getElementById('start-btn').addEventListener('click', startGame);
+    document.getElementById('restart-btn').addEventListener('click', resetGame);
+
+    animate();
+  }
+
+  // --- 输入逻辑 (重点更新部分) ---
+  function handleTouchStart(e) {
+    e.preventDefault();
+    if (AudioEngine.ctx && AudioEngine.ctx.state !== 'running') {
+      AudioEngine.ctx.resume();
+    }
+
+    for (let i = 0; i < e.changedTouches.length; i++) {
+      const t = e.changedTouches[i];
+      if (t.clientX < window.innerWidth / 2) {
+        // 左侧：移动控制
+        if (input.touchIdMove === null) {
+          input.touchIdMove = t.identifier;
+
+          const { worldX, worldY } = calculateWorldCoords(t.clientX, t.clientY);
+
+          // 计算相对偏移量 (飞船位置 - 触摸点世界坐标)
+          input.relativeOffsetX = player.position.x - worldX;
+          input.relativeOffsetY = player.position.y - worldY;
+          input.isMoving = true;
+
+          // 目标立刻设置为当前飞船位置，避免跳动
+          input.targetX = player.position.x;
+          input.targetY = player.position.y;
+        }
+      } else {
+        // 右侧：射击控制
+        input.isFiring = true;
+      }
+    }
+  }
+
+  function handleTouchMove(e) {
+    e.preventDefault();
+    for (let i = 0; i < e.changedTouches.length; i++) {
+      const t = e.changedTouches[i];
+      if (t.identifier === input.touchIdMove) {
+        const { worldX, worldY } = calculateWorldCoords(t.clientX, t.clientY);
+
+        // 应用相对偏移量： (当前触摸点世界坐标 + 偏移量)
+        let targetX = worldX + input.relativeOffsetX;
+        let targetY = worldY + input.relativeOffsetY;
+
+        const bounds = getPlayerBounds();
+
+        // 严格限制飞船位置在边界内
+        input.targetX = THREE.MathUtils.clamp(targetX, bounds.minX, bounds.maxX);
+        input.targetY = THREE.MathUtils.clamp(targetY, bounds.minY, bounds.maxY);
+      }
+    }
+  }
+
+  function handleTouchEnd(e) {
+    e.preventDefault();
+    for (let i = 0; i < e.changedTouches.length; i++) {
+      const t = e.changedTouches[i];
+      if (t.identifier === input.touchIdMove) {
+        input.touchIdMove = null;
+        input.isMoving = false;
+      }
+    }
+    checkFiringStatus(e.touches);
+  }
+
+  function checkFiringStatus(touches) {
+    let rightSideTouch = false;
+    for (let i = 0; i < touches.length; i++) {
+      // 只要还有触摸在右侧，就继续射击
+      if (touches[i].clientX > window.innerWidth / 2) { rightSideTouch = true; break; }
+    }
+    input.isFiring = rightSideTouch;
+  }
+
+  // 鼠标移动使用绝对控制，方便桌面调试
+  function handleMouseMove(e) {
+    if (!input.isMoving) { // 如果没有触摸移动事件在进行
+      const { worldX, worldY } = calculateWorldCoords(e.clientX, e.clientY);
+      const bounds = getPlayerBounds();
+
+      input.targetX = THREE.MathUtils.clamp(worldX, bounds.minX, bounds.maxX);
+      input.targetY = THREE.MathUtils.clamp(worldY, bounds.minY, bounds.maxY);
+    }
+  }
+
+  // --- 游戏物体创建 (与上版本相同，省略) ---
+  function createPlayer() {
+    const group = new THREE.Group();
+    const bodyGeo = new THREE.ConeGeometry(0.6, 2.5, 5);
+    bodyGeo.rotateX(Math.PI / 2);
+    const mat = new THREE.MeshBasicMaterial({ color: CONFIG.colors.player, wireframe: true });
+    const body = new THREE.Mesh(bodyGeo, mat);
+    group.add(body);
+    const wingGeo = new THREE.BoxGeometry(3.5, 0.1, 1);
+    const wingMat = new THREE.MeshBasicMaterial({ color: 0x0088ff, wireframe: true });
+    const wings = new THREE.Mesh(wingGeo, wingMat);
+    wings.position.z = 0.5;
+    group.add(wings);
+    player = group;
+    player.position.set(0, -2, 0);
+    scene.add(player);
+
+    player.muzzles = [
+      new THREE.Vector3(0, 0, -1.5),
+      new THREE.Vector3(-1.0, 0, -0.5),
+      new THREE.Vector3(1.0, 0, -0.5),
+      new THREE.Vector3(-2.0, 0, 0), // 额外炮口
+      new THREE.Vector3(2.0, 0, 0), // 额外炮口
+    ];
+  }
+
+  function createStarfield() {
+    starGeo = new THREE.BufferGeometry();
+    const count = 2500;
+    const positions = new Float32Array(count * 3);
+    for(let i=0; i<count*3; i+=3) {
+      positions[i] = (Math.random() - 0.5) * 150;
+      positions[i+1] = (Math.random() - 0.5) * 150;
+      positions[i+2] = (Math.random() - 0.5) * 400;
+    }
+    starGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    const starMat = new THREE.PointsMaterial({ color: CONFIG.colors.star, size: 0.15, transparent: true });
+    particles = new THREE.Points(starGeo, starMat);
+    worldGroup.add(particles);
+  }
+
+  function createEnemy(isBossMinion = false) {
+    const type = Math.random();
+    let geo, color, hp, speedZ, movePattern;
+    if (type > 0.6) {
+      geo = new THREE.BoxGeometry(2, 2, 2);
+      color = CONFIG.colors.obstacle; hp = 5; speedZ = 0.05; movePattern = 'slow';
+    } else {
+      geo = new THREE.OctahedronGeometry(1.2, 0);
+      color = CONFIG.colors.enemy; hp = 2; speedZ = 0.15; movePattern = 'sine';
+    }
+
+    const originalColor = color;
+    const mat = new THREE.MeshBasicMaterial({ color: color, wireframe: true });
+    const enemy = new THREE.Mesh(geo, mat);
+    enemy.position.set((Math.random() - 0.5) * 40, (Math.random() - 0.5) * 25, CONFIG.spawnDistance);
+    enemy.userData = {
+      hp: hp, speedZ: isBossMinion ? speedZ * 2 : speedZ,
+      movePattern: movePattern, initialX: enemy.position.x, initialY: enemy.position.y,
+      timeOffset: Math.random() * 100, originalColor: originalColor, flickerTimer: 0
+    };
+    worldGroup.add(enemy);
+    enemies.push(enemy);
+  }
+
+  function createPowerUp(position) {
+    const type = Math.random() > 0.6 ? 'health' : 'weapon';
+    let geo, color;
+
+    if (type === 'weapon') {
+      geo = new THREE.TetrahedronGeometry(0.8);
+      color = CONFIG.colors.powerupWeapon;
+    } else {
+      geo = new THREE.BoxGeometry(0.8, 0.8, 0.8);
+      color = CONFIG.colors.powerupHealth;
+    }
+
+    const mat = new THREE.MeshBasicMaterial({ color: color, wireframe: true });
+    const powerup = new THREE.Mesh(geo, mat);
+    powerup.position.copy(position);
+
+    const beamGeo = new THREE.CylinderGeometry(0.1, 0.1, 10, 4);
+    const beamMat = new THREE.MeshBasicMaterial({ color: color, transparent: true, opacity: 0.3 });
+    const beam = new THREE.Mesh(beamGeo, beamMat);
+    beam.position.y = 5;
+    powerup.add(beam);
+
+    powerup.userData = { type: type, rotSpeed: 0.05 };
+    worldGroup.add(powerup);
+    powerups.push(powerup);
+  }
+
+  function createBoss() {
+    gameState.bossActive = true;
+
+    const geometries = [
+      new THREE.IcosahedronGeometry(6, 1),
+      new THREE.DodecahedronGeometry(6, 0),
+      new THREE.OctahedronGeometry(6, 0)
+    ];
+    const geo = geometries[Math.floor(Math.random() * geometries.length)];
+
+    const bossColor = new THREE.Color(Math.random(), Math.random(), Math.random());
+
+    const mat = new THREE.MeshBasicMaterial({ color: bossColor, wireframe: true });
+    boss = new THREE.Mesh(geo, mat);
+
+    const coreGeo = new THREE.SphereGeometry(3, 16, 16);
+    const coreMat = new THREE.MeshBasicMaterial({ color: 0xffff00, wireframe: true });
+    const core = new THREE.Mesh(coreGeo, coreMat);
+    boss.add(core);
+    boss.position.set(0, 0, -200);
+    boss.userData = {
+      hp: 150, maxHp: 150, state: 'enter', flickerTimer: 0,
+      originalColor: bossColor.getHex(), currentMaterial: mat
+    };
+    originalBossMaterial = mat;
+
+    worldGroup.add(boss);
+    const warning = document.getElementById('boss-warning');
+    warning.style.display = 'block';
+    setTimeout(() => { warning.style.display = 'none'; }, 3000);
+  }
+
+  function createBullet(startPos, muzzleIndex) {
+    const geo = new THREE.BoxGeometry(0.25, 0.25, 2.5);
+    const mat = new THREE.MeshBasicMaterial({ color: CONFIG.colors.bullet });
+    const bullet = new THREE.Mesh(geo, mat);
+
+    bullet.position.copy(startPos);
+    bullet.translateZ(-2.0); // 确保子弹在飞船前方
+
+    // 稍作调整，让外侧炮口的子弹更靠前，模拟动能差异
+    if (muzzleIndex >= 3) bullet.translateZ(-0.5);
+
+    worldGroup.add(bullet);
+    bullets.push(bullet);
+    AudioEngine.shoot();
+  }
+
+  function createExplosion(pos, color, count = 20) {
+    const geo = new THREE.BufferGeometry();
+    const positions = []; const velocities = [];
+    for(let i=0; i<count*3; i+=3) {
+      positions.push(pos.x, pos.y, pos.z);
+      velocities.push((Math.random()-0.5)*1.0, (Math.random()-0.5)*1.0, (Math.random()-0.5)*1.0);
+    }
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+    const mat = new THREE.PointsMaterial({ color: color, size: 0.5, transparent:true });
+    const system = new THREE.Points(geo, mat);
+    system.userData = { life: 1.0, velocities: velocities };
+    worldGroup.add(system);
+    explosions.push(system);
+    AudioEngine.explode();
+  }
+
+  // --- 游戏循环 ---
+
+  function update() {
+    if (!gameState.active) return;
+    gameState.frameCount++;
+
+    // 1. 玩家移动 (根据相对控制的目标位置平滑移动)
+    const prevX = player.position.x;
+    const prevY = player.position.y;
+
+    player.position.x += (input.targetX - player.position.x) * CONFIG.playerLerp;
+    player.position.y += (input.targetY - player.position.y) * CONFIG.playerLerp;
+
+    // 2. 玩家旋转（模拟机动）
+    const deltaX = player.position.x - prevX;
+    const deltaY = player.position.y - prevY;
+    const maxTilt = 0.5;
+    player.rotation.z = THREE.MathUtils.clamp(-deltaX * 0.1, -maxTilt, maxTilt);
+    player.rotation.x = THREE.MathUtils.clamp(deltaY * 0.1, -maxTilt, maxTilt);
+
+    // 3. 星空和环境移动（向前飞）
+    const starPos = particles.geometry.attributes.position.array;
+    for(let i=2; i<starPos.length; i+=3) {
+      starPos[i] += 1.5;
+      if (starPos[i] > 50) starPos[i] = -350;
+    }
+    particles.geometry.attributes.position.needsUpdate = true;
+
+    // 4. 射击
+    if (input.isFiring && gameState.frameCount % CONFIG.fireRate === 0) {
+      // 确保子弹位置正确从飞船模型处射出
+
+      // 级别 1 (中心)
+      let muzzle = player.muzzles[0].clone().applyMatrix4(player.matrixWorld);
+      createBullet(muzzle, 0);
+
+      if (gameState.weaponLevel >= 2) {
+        // 级别 2 (左右侧)
+        let leftMuzzle = player.muzzles[1].clone().applyMatrix4(player.matrixWorld);
+        let rightMuzzle = player.muzzles[2].clone().applyMatrix4(player.matrixWorld);
+        createBullet(leftMuzzle, 1);
+        createBullet(rightMuzzle, 2);
+      }
+      if (gameState.weaponLevel >= 3) {
+        // 级别 3 (外侧)
+        let leftOuter = player.muzzles[3].clone().applyMatrix4(player.matrixWorld);
+        let rightOuter = player.muzzles[4].clone().applyMatrix4(player.matrixWorld);
+        createBullet(leftOuter, 3);
+        createBullet(rightOuter, 4);
+      }
+      if (gameState.weaponLevel >= 4) CONFIG.fireRate = 6;
+    }
+
+    // 5. 子弹逻辑
+    for (let i = bullets.length - 1; i >= 0; i--) {
+      let b = bullets[i];
+      b.translateZ(-3.0);
+      if (b.position.z < -250) { worldGroup.remove(b); bullets.splice(i, 1); }
+    }
+
+    // 6. 敌人逻辑
+    if (!boss && Math.random() < Math.max(0.01, 0.01 + (gameState.score / 20000))) createEnemy();
+
+    enemies.forEach((e, index) => {
+      e.position.z += e.userData.speedZ + 0.1;
+      const t = (gameState.frameCount + e.userData.timeOffset) * 0.02;
+      if (e.userData.movePattern === 'sine') {
+        e.position.x = e.userData.initialX + Math.sin(t) * 5;
+        e.position.y = e.userData.initialY + Math.cos(t * 0.5) * 3;
+      }
+      e.rotation.x += 0.02; e.rotation.y += 0.02;
+
+      // 敌人受击闪烁
+      if(e.userData.flickerTimer > 0) {
+        e.userData.flickerTimer--;
+        if(gameState.frameCount % 4 < 2) {
+          e.material.color.setHex(CONFIG.colors.hitFlash);
+        } else {
+          e.material.color.setHex(e.userData.originalColor);
+        }
+      } else {
+        e.material.color.setHex(e.userData.originalColor);
+      }
+
+      // 碰撞检测：玩家位置 vs 敌人位置
+      if (player.position.distanceTo(e.position) < 3.5) {
+        hurtPlayer(20); destroyEnemy(e, index); return;
+      }
+
+      for (let bIndex = bullets.length - 1; bIndex >= 0; bIndex--) {
+        if (bullets[bIndex].position.distanceTo(e.position) < 3.5) {
+          worldGroup.remove(bullets[bIndex]); bullets.splice(bIndex, 1);
+          e.userData.flickerTimer = 4;
+          e.userData.hp--;
+          if (e.userData.hp <= 0) {
+            addScore(100);
+            if (Math.random() < 0.25) createPowerUp(e.position);
+            destroyEnemy(e, index);
+            break;
+          }
+        }
+      }
+      if (e.position.z > CONFIG.despawnDistance) { worldGroup.remove(e); enemies.splice(index, 1); }
+    });
+
+    // 7. 道具逻辑 (与上版本相同，省略)
+    for (let i = powerups.length - 1; i >= 0; i--) {
+      let p = powerups[i];
+      p.position.z += 0.2;
+      p.rotation.y += p.userData.rotSpeed;
+      p.rotation.z += p.userData.rotSpeed;
+
+      if (player.position.distanceTo(p.position) < 4.0) {
+        if (p.userData.type === 'weapon') {
+          gameState.weaponLevel = Math.min(4, gameState.weaponLevel + 1);
+          updateWeaponUI(); showMsg("武器升级!"); AudioEngine.powerUp();
+        } else {
+          gameState.hp = Math.min(100, gameState.hp + 30);
+          updateHealthUI(); showMsg("护盾修复"); AudioEngine.healthUp();
+        }
+        worldGroup.remove(p); powerups.splice(i, 1);
+      } else if (p.position.z > 20) {
+        worldGroup.remove(p); powerups.splice(i, 1);
+      }
+    }
+
+    // 8. Boss 逻辑 (与上版本相同，省略)
+    if (!boss && gameState.score >= CONFIG.bossThreshold) createBoss();
+    if (boss) {
+      if(boss.userData.flickerTimer > 0) {
+        boss.userData.flickerTimer--;
+        if(gameState.frameCount % 4 < 2) {
+          boss.material.color.setHex(CONFIG.colors.hitFlash);
+        } else {
+          boss.material.color.setHex(boss.userData.originalColor);
+        }
+      } else {
+        boss.material.color.setHex(boss.userData.originalColor);
+      }
+
+      if (boss.userData.state === 'enter') {
+        boss.position.z += 0.5;
+        if (boss.position.z >= -90) boss.userData.state = 'fight';
+      } else {
+        const t = gameState.frameCount * 0.01;
+        boss.position.x = Math.sin(t) * 20; boss.position.y = Math.cos(t * 1.3) * 10;
+        boss.rotation.y += 0.01;
+        if (gameState.frameCount % 60 === 0) createEnemy(true);
+
+        for (let bIndex = bullets.length - 1; bIndex >= 0; bIndex--) {
+          if (bullets[bIndex].position.distanceTo(boss.position) < 9) {
+            worldGroup.remove(bullets[bIndex]); bullets.splice(bIndex, 1);
+            boss.userData.hp--;
+            boss.userData.flickerTimer = 8;
+
+            if (boss.userData.hp <= 0) {
+              createExplosion(boss.position, boss.userData.originalColor, 300);
+              worldGroup.remove(boss); boss = null;
+              addScore(5000); gameState.bossActive = false; CONFIG.bossThreshold += 5000;
+              gameState.hp = Math.min(100, gameState.hp + 50); updateHealthUI();
+              createPowerUp(player.position.clone().add(new THREE.Vector3(0,0,-20)));
+            }
+          }
+        }
+      }
+    }
+
+    // 9. 特效更新 (与上版本相同，省略)
+    for (let i = explosions.length - 1; i >= 0; i--) {
+      const exp = explosions[i]; exp.userData.life -= 0.02;
+      const pos = exp.geometry.attributes.position.array;
+      const vels = exp.userData.velocities;
+      for(let k=0; k < pos.length/3; k++) {
+        pos[k*3] += vels[k*3]; pos[k*3+1] += vels[k*3+1]; pos[k*3+2] += vels[k*3+2];
+      }
+      exp.geometry.attributes.position.needsUpdate = true;
+      exp.material.opacity = exp.userData.life;
+      if (exp.userData.life <= 0) { worldGroup.remove(exp); explosions.splice(i, 1); }
+    }
+  }
+
+  function destroyEnemy(obj, index) {
+    createExplosion(obj.position, obj.userData.originalColor, 20);
+    worldGroup.remove(obj);
+    enemies.splice(index, 1);
+  }
+
+  function animate() {
+    requestAnimationFrame(animate);
+    update();
+    composer.render();
+  }
+
+  function startGame() {
+    AudioEngine.init();
+    if (AudioEngine.ctx) AudioEngine.ctx.resume().then(() => {
+      AudioEngine.playMusic();
+    }).catch(e => console.error("Audio resume failed:", e));
+
+    document.getElementById('start-screen').classList.add('hidden');
+    document.getElementById('game-over-screen').classList.add('hidden');
+
+    // 隐藏提示
+    document.getElementById('left-zone').style.opacity = 0;
+    document.getElementById('right-zone').style.opacity = 0;
+
+    gameState.score = 0; gameState.hp = 100; gameState.weaponLevel = 1; gameState.active = true; CONFIG.bossThreshold = 3000;
+
+    enemies.forEach(e => worldGroup.remove(e));
+    bullets.forEach(b => worldGroup.remove(b));
+    powerups.forEach(p => worldGroup.remove(p));
+    explosions.forEach(exp => worldGroup.remove(exp));
+    if(boss) { worldGroup.remove(boss); boss = null; }
+
+    enemies = []; bullets = []; powerups = []; explosions = [];
+
+    // 飞船回到安全区域中心
+    input.targetX = 0; input.targetY = -2;
+    player.position.set(0, -2, 0);
+    player.rotation.set(0, 0, 0);
+
+    updateScoreUI(); updateHealthUI(); updateWeaponUI();
+  }
+
+  function resetGame() { startGame(); }
+
+  function hurtPlayer(amount) {
+    gameState.hp -= amount;
+    updateHealthUI();
+    AudioEngine.hit();
+    const shakeIntensity = 0.8;
+    camera.position.x += (Math.random() - 0.5) * shakeIntensity;
+    camera.position.y += (Math.random() - 0.5) * shakeIntensity;
+    if (gameState.hp <= 0) gameOver();
+  }
+
+  function gameOver() {
+    gameState.active = false;
+    AudioEngine.stopMusic();
+    document.getElementById('final-score').innerText = "最终分数: " + Math.floor(gameState.score);
+    document.getElementById('game-over-screen').classList.remove('hidden');
+  }
+
+  function addScore(points) { gameState.score += points; updateScoreUI(); }
+  function updateScoreUI() { document.getElementById('score-display').innerText = "分数: " + Math.floor(gameState.score); }
+  function updateHealthUI() {
+    const bar = document.getElementById('hp-bar');
+    bar.style.width = gameState.hp + "%";
+    bar.style.backgroundColor = gameState.hp < 30 ? "#ff0000" : "#ff0055";
+  }
+  function updateWeaponUI() {
+    for(let i=1; i<=4; i++) {
+      const el = document.getElementById('wp-'+i);
+      if(i <= gameState.weaponLevel) el.classList.add('active');
+      else el.classList.remove('active');
+    }
+    CONFIG.fireRate = gameState.weaponLevel === 4 ? 6 : 8;
+  }
+  function showMsg(text) {
+    const el = document.getElementById('msg-overlay');
+    el.innerText = text;
+    el.style.opacity = 1;
+    setTimeout(() => el.style.opacity = 0, 1500);
+  }
+
+  function onWindowResize() {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    composer.setSize(window.innerWidth, window.innerHeight);
+  }
+
+  init();
+
+</script>
+</body>
+</html>

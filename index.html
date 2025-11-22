@@ -325,8 +325,19 @@
 
             // 游戏数据配置
             const games = ref([
+
                 {
-                    id: 1,
+                    id: 2,
+                    name: "太空战机",
+                    description: "3D太空射击游戏！",
+                    category: "益智",
+                    image: "https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?auto=format&fit=crop&w=600",
+                    path: "SpaceFly",
+                    badge: "热门",
+                    type: "html" // Vue构建项目
+                },
+                {
+                    id: 3,
                     name: "谷歌小恐龙Switch版本",
                     description: "在Switch上玩谷歌小恐龙！",
                     category: "益智",
@@ -411,7 +422,16 @@
                     path: "WeixinSteps",
                     badge: "热门",
                     type: "html" // Vue构建项目
-                },
+                }, {
+                    id: 1,
+                    name: "天赐命名",
+                    description: "给你的小孩取个名字吧！！",
+                    category: "益智",
+                    image: "https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?auto=format&fit=crop&w=600",
+                    path: "NameGenerator",
+                    badge: "工具",
+                    type: "html" // Vue构建项目
+                }
             ]);
 
             // 根据类型生成正确的游戏链接
